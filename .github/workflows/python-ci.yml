@@ -1,0 +1,43 @@
+name: Python checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: python-server
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Lint Python sources
+        working-directory: python-server
+        run: python -m ruff check . --no-cache
+
+      - name: Check Python formatting
+        working-directory: python-server
+        run: python -m ruff format . --check --no-cache
+
+      - name: Compile Python sources
+        run: python -m compileall -q python-server
+
+      - name: Run pytest suite
+        working-directory: python-server
+        run: python -m pytest -q
+
+      - name: Run unittest suite
+        working-directory: python-server
+        run: python -m unittest discover -s tests -v
+
+      - name: Check Git whitespace
+        run: git diff --check

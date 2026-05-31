@@ -1,0 +1,37 @@
+<ArcGIS defaultAssembly="ArcGisMcpAddin.dll" defaultNamespace="ArcGisMcpAddin" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{d0b64d1f-827b-4b21-9875-cf65f5dfd2d3}" version="0.3.0" desktopVersion="3.7">
+    <Name>ArcGIS Pro MCP Server Bridge</Name>
+    <Description>Unified MCP Bridge Add-In. Opens a local Named Pipe server (\\.\pipe\ArcGisMcpBridge) for ArcGIS Pro project, map, layer, geoprocessing, and layout automation.</Description>
+    <Image>Images\ArcGisMcp32.png</Image>
+    <Author>ArcGIS MCP Contributors</Author>
+    <Company>ArcGIS MCP</Company>
+    <Date>2026-05-29</Date>
+    <Subject>GIS, Developer Tools, MCP, ArcGIS Pro</Subject>
+  </AddInInfo>
+
+  <modules>
+    <!-- autoLoad starts the local pipe server when ArcGIS Pro loads the Add-In. -->
+    <insertModule id="ArcGisMcpAddin_Module" className="Module1" autoLoad="true" caption="ArcGIS MCP Module">
+      <tabs>
+        <tab id="ArcGisMcpAddin_Tab" caption="ArcGIS MCP">
+          <group refID="ArcGisMcpAddin_Group" />
+        </tab>
+      </tabs>
+
+      <groups>
+        <group id="ArcGisMcpAddin_Group" caption="MCP Server Bridge Status" appearsOnAddInTab="false">
+          <button refID="ArcGisMcpAddin_StatusButton" size="large" />
+        </group>
+      </groups>
+
+      <controls>
+        <button id="ArcGisMcpAddin_StatusButton" caption="Show MCP Status" className="StatusButton" loadOnClick="true"
+                smallImage="Images\ArcGisMcp16.png" largeImage="Images\ArcGisMcp32.png">
+          <tooltip heading="ArcGIS Pro MCP Bridge">
+            Checks and displays the status of the local Named Pipe server (\\.\pipe\ArcGisMcpBridge).
+          </tooltip>
+        </button>
+      </controls>
+    </insertModule>
+  </modules>
+</ArcGIS>

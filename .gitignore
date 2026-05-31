@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# .NET / ArcGIS Pro Add-in build output
+bin/
+obj/
+*.user
+*.suo
+
+# Local validation output
+outputs/
+*.aprx.lock
+
+# Project-specific local scripts excluded from the public package
+/tools/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
