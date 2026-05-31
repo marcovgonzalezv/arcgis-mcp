@@ -2,7 +2,7 @@
 
 `arcgis-mcp` integra ArcGIS Pro 3.7 con clientes compatibles con Model Context Protocol (MCP). El proyecto combina un Add-In de ArcGIS Pro en C#, ejecutado dentro de ArcGIS Pro, con un servidor Python FastMCP que expone operaciones de ArcGIS Pro como herramientas MCP mediante un Named Pipe local de Windows.
 
-El contrato actual incluye 63 herramientas MCP, 52 comandos Add-In, 2 recursos MCP y 2 plantillas de prompts MCP.
+El MCP incluye 63 herramientas, 52 comandos Add-In, 2 recursos MCP y 2 plantillas de prompts (ejemplos).
 
 ---
 
