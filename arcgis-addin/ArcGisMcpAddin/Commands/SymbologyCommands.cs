@@ -23,6 +23,11 @@ namespace ArcGisMcpAddin.Commands
             return QueuedTask.Run<object>(() =>
             {
                 var layer = GetFeatureLayer(layerName);
+                if (!LayerHasField(layer, fieldName))
+                {
+                    throw new ArgumentException($"Field '{fieldName}' not found in layer '{layerName}'.");
+                }
+
                 var method = ParseClassificationMethod(classificationMethod);
                 var ramp = GetColorRamp(colorRamp);
                 var symbol = CreateSymbolTemplate(layer);
@@ -49,7 +54,8 @@ namespace ArcGisMcpAddin.Commands
                     layer_name = layerName,
                     field_name = fieldName,
                     break_count = breakCount,
-                    classification_method = method.ToString()
+                    classification_method = method.ToString(),
+                    renderer_type = layer.GetRenderer()?.GetType().Name ?? ""
                 };
             });
         }
@@ -63,6 +69,11 @@ namespace ArcGisMcpAddin.Commands
             return QueuedTask.Run<object>(() =>
             {
                 var layer = GetFeatureLayer(layerName);
+                if (!LayerHasField(layer, fieldName))
+                {
+                    throw new ArgumentException($"Field '{fieldName}' not found in layer '{layerName}'.");
+                }
+
                 var definition = new UniqueValueRendererDefinition
                 {
                     ValueFields = new List<string> { fieldName },
@@ -81,7 +92,13 @@ namespace ArcGisMcpAddin.Commands
                 var renderer = layer.CreateRenderer(definition);
                 layer.SetRenderer(renderer);
 
-                return new { success = true, layer_name = layerName, field_name = fieldName };
+                return new
+                {
+                    success = true,
+                    layer_name = layerName,
+                    field_name = fieldName,
+                    renderer_type = layer.GetRenderer()?.GetType().Name ?? ""
+                };
             });
         }
 

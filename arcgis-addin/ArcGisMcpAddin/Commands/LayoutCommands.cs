@@ -376,6 +376,96 @@ namespace ArcGisMcpAddin.Commands
             });
         }
 
+        public static Task<object> ExportAllLayoutsAsync(
+            string outputDirectory,
+            string formatType,
+            int dpi,
+            bool includeMapSeries)
+        {
+            return QueuedTask.Run<object>(() =>
+            {
+                if (Project.Current == null)
+                {
+                    throw new InvalidOperationException("No active project found.");
+                }
+
+                Directory.CreateDirectory(outputDirectory);
+                var layoutItems = Project.Current.GetItems<LayoutProjectItem>().ToList();
+                var results = new List<object>();
+                int exported = 0;
+                int failed = 0;
+
+                foreach (var layoutItem in layoutItems)
+                {
+                    string outputPath = Path.Combine(
+                        outputDirectory,
+                        $"{SafeFileName(layoutItem.Name)}.{GetExportExtension(formatType)}");
+
+                    try
+                    {
+                        var layout = layoutItem.GetLayout();
+                        if (layout == null)
+                        {
+                            throw new InvalidOperationException($"Could not open layout '{layoutItem.Name}'.");
+                        }
+
+                        var exportFormat = CreateExportFormat(outputPath, formatType, dpi);
+                        string exportMode = "layout";
+                        if (includeMapSeries && layout.MapSeries != null && layout.MapSeries.PageCount > 0)
+                        {
+                            var exportOptions = new MapSeriesExportOptions
+                            {
+                                ExportPages = ExportPages.All,
+                                ExportFileOptions = exportFormat is PDFFormat
+                                    ? ExportFileOptions.ExportAsSinglePDF
+                                    : ExportFileOptions.ExportMultipleNames
+                            };
+                            layout.Export(exportFormat, exportOptions);
+                            exportMode = "map_series";
+                        }
+                        else
+                        {
+                            layout.Export(exportFormat);
+                        }
+
+                        exported++;
+                        results.Add(new
+                        {
+                            success = true,
+                            layout_name = layoutItem.Name,
+                            output_path = outputPath,
+                            export_mode = exportMode,
+                            bytes = File.Exists(outputPath) ? new FileInfo(outputPath).Length : 0
+                        });
+                    }
+                    catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException)
+                    {
+                        failed++;
+                        results.Add(new
+                        {
+                            success = false,
+                            layout_name = layoutItem.Name,
+                            output_path = outputPath,
+                            message = ex.Message
+                        });
+                    }
+                }
+
+                return new
+                {
+                    success = failed == 0,
+                    output_directory = outputDirectory,
+                    format = formatType,
+                    resolution = dpi,
+                    include_map_series = includeMapSeries,
+                    layout_count = layoutItems.Count,
+                    exported,
+                    failed,
+                    results
+                };
+            });
+        }
+
         private static void TryCreateSurround(
             Layout layout,
             string mapFrameName,
@@ -490,6 +580,25 @@ namespace ArcGisMcpAddin.Commands
             exportFormat.OutputFileName = outputPath;
             exportFormat.Resolution = dpi;
             return exportFormat;
+        }
+
+        private static string GetExportExtension(string formatType)
+        {
+            return formatType.ToUpperInvariant() switch
+            {
+                "JPEG" or "JPG" => "jpg",
+                "PNG" => "png",
+                "TIFF" or "TIF" => "tif",
+                _ => "pdf"
+            };
+        }
+
+        private static string SafeFileName(string value)
+        {
+            var invalid = Path.GetInvalidFileNameChars();
+            var chars = value.Select(character => invalid.Contains(character) ? '_' : character);
+            string safe = new string(chars.ToArray()).Trim();
+            return string.IsNullOrWhiteSpace(safe) ? "layout" : safe;
         }
     }
 }

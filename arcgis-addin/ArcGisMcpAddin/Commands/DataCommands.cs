@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ArcGIS.Core.Data;
+using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 
@@ -137,6 +138,79 @@ namespace ArcGisMcpAddin.Commands
             });
         }
 
+        public static Task<object> QueryLayerAsync(
+            string layerName,
+            string whereClause,
+            string fields,
+            int limit,
+            bool includeGeometry)
+        {
+            return QueuedTask.Run<object>(() =>
+            {
+                var layer = GetFeatureLayer(layerName);
+                using var featureClass = layer.GetFeatureClass();
+                if (featureClass == null)
+                {
+                    throw new InvalidOperationException($"Layer '{layerName}' does not reference a valid feature class.");
+                }
+
+                using var definition = featureClass.GetDefinition();
+                var availableFields = definition.GetFields();
+                var selectedFields = ResolveFields(fields, availableFields);
+                int rowLimit = Math.Clamp(limit, 1, 5000);
+                var rows = new List<Dictionary<string, object?>>();
+                var filter = new QueryFilter { WhereClause = whereClause };
+
+                using var cursor = layer.Search(filter);
+                int count = 0;
+                while (cursor.MoveNext() && count < rowLimit)
+                {
+                    using var row = cursor.Current;
+                    var values = new Dictionary<string, object?>();
+
+                    foreach (string fieldName in selectedFields)
+                    {
+                        object value = row[fieldName];
+                        values[fieldName] = value == DBNull.Value ? null : value;
+                    }
+
+                    if (includeGeometry)
+                    {
+                        var geometryField = row.GetFields()
+                            .FirstOrDefault(field => field.FieldType == FieldType.Geometry);
+                        if (geometryField != null && row[geometryField.Name] is Geometry geometry)
+                        {
+                            var extent = geometry.Extent;
+                            values["geometry_extent"] = new
+                            {
+                                xmin = extent.XMin,
+                                ymin = extent.YMin,
+                                xmax = extent.XMax,
+                                ymax = extent.YMax,
+                                wkid = extent.SpatialReference?.Wkid
+                            };
+                        }
+                    }
+
+                    rows.Add(values);
+                    count++;
+                }
+
+                bool limited = rows.Count == rowLimit;
+                return new
+                {
+                    layer_name = layerName,
+                    where_clause = whereClause,
+                    fields = selectedFields,
+                    limit = rowLimit,
+                    include_geometry = includeGeometry,
+                    returned = rows.Count,
+                    limited,
+                    rows
+                };
+            });
+        }
+
         // Helper to retrieve a feature layer by name (case-insensitive)
         private static FeatureLayer GetFeatureLayer(string layerName)
         {
@@ -156,6 +230,34 @@ namespace ArcGisMcpAddin.Commands
             }
 
             return layer;
+        }
+
+        private static List<string> ResolveFields(string fields, IReadOnlyList<Field> availableFields)
+        {
+            var attributeFields = availableFields
+                .Where(field => field.FieldType != FieldType.Geometry)
+                .Select(field => field.Name)
+                .ToList();
+
+            if (string.IsNullOrWhiteSpace(fields) || fields.Trim() == "*")
+            {
+                return attributeFields;
+            }
+
+            var selected = fields
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+            var missing = selected
+                .Where(fieldName => !attributeFields.Any(
+                    available => available.Equals(fieldName, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (missing.Count > 0)
+            {
+                throw new ArgumentException($"Field(s) not found: {string.Join(", ", missing)}.");
+            }
+
+            return selected;
         }
     }
 }

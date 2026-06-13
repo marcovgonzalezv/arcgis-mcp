@@ -54,6 +54,48 @@ def export_layout(
         return f"Error exporting layout '{layout_name}': {resp.get('error')}"
 
 
+def export_all_layouts(
+    output_directory: str,
+    format_type: str = "PDF",
+    resolution_dpi: int = 300,
+    include_map_series: bool = True,
+    ctx: Context = None,
+) -> str:
+    """
+    Exports every layout in the active ArcGIS Pro project to one output directory.
+    """
+    if ctx:
+        ctx.info(f"Exporting all layouts to '{output_directory}'...")
+    resp = client.send_command(
+        "export_all_layouts",
+        {
+            "output_directory": output_directory,
+            "format": format_type,
+            "resolution": resolution_dpi,
+            "include_map_series": include_map_series,
+        },
+        timeout_ms=120000,
+        retries=0,
+    )
+    if not resp.get("success"):
+        return f"Error exporting layouts: {resp.get('message') or resp.get('error')}"
+
+    data = resp.get("data", {})
+    exported = data.get("exported", 0)
+    failed = data.get("failed", 0)
+    results = data.get("results", [])
+    lines = [
+        f"Exported {exported} layout(s) to '{output_directory}' as {format_type}.",
+        f"Failed exports: {failed}.",
+    ]
+    for item in results:
+        status = "OK" if item.get("success") else "ERROR"
+        target = item.get("output_path") or item.get("layout_name")
+        detail = item.get("message", "")
+        lines.append(f"- {status}: {target} {detail}".rstrip())
+    return "\n".join(lines)
+
+
 def create_basic_layout(
     layout_name: str,
     title: str,

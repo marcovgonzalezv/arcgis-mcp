@@ -211,6 +211,23 @@ def get_layer_fields(layer_name: str, ctx: Context = None) -> str:
     return tools.get_layer_fields(layer_name, ctx)
 
 
+@mcp.tool()
+def query_layer(
+    layer_name: str,
+    where_clause: str = "1=1",
+    fields: str = "*",
+    limit: int = 100,
+    include_geometry: bool = False,
+    ctx: Context = None,
+) -> str:
+    """
+    Queries attribute rows from an active-map feature layer.
+    """
+    return tools.query_layer(
+        layer_name, where_clause, fields, limit, include_geometry, ctx
+    )
+
+
 # =====================================================================
 # 2B. SYMBOLOGY AND LABELING TOOLS
 # =====================================================================
@@ -397,12 +414,20 @@ def undo_last_edit(ctx: Context = None) -> str:
 
 
 @mcp.tool()
-def run_gp_tool(tool_name: str, parameters: list, ctx: Context = None) -> str:
+def run_gp_tool(
+    tool_name: str,
+    parameters: list,
+    add_outputs_to_map: bool = False,
+    allow_delete: bool = False,
+    ctx: Context = None,
+) -> str:
     """
     Executes any ArcGIS Pro geoprocessing tool by name with list of parameters.
     Example: tool_name="Buffer_analysis", parameters=["Roads", "Roads_Buffer", "100 Meters"]
     """
-    return tools.run_gp_tool(tool_name, parameters, ctx)
+    return tools.run_gp_tool(
+        tool_name, parameters, ctx, add_outputs_to_map, allow_delete
+    )
 
 
 @mcp.tool()
@@ -679,6 +704,22 @@ def export_layout(
     """
     return tools.export_layout(
         layout_name, output_path, format_type, resolution_dpi, ctx
+    )
+
+
+@mcp.tool()
+def export_all_layouts(
+    output_directory: str,
+    format_type: str = "PDF",
+    resolution_dpi: int = 300,
+    include_map_series: bool = True,
+    ctx: Context = None,
+) -> str:
+    """
+    Exports every layout in the active ArcGIS Pro project to one output directory.
+    """
+    return tools.export_all_layouts(
+        output_directory, format_type, resolution_dpi, include_map_series, ctx
     )
 
 

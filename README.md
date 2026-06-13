@@ -2,7 +2,7 @@
 
 `arcgis-mcp` integra ArcGIS Pro 3.7 con clientes compatibles con Model Context Protocol (MCP). El proyecto combina un Add-In de ArcGIS Pro en C#, ejecutado dentro de ArcGIS Pro, con un servidor Python FastMCP que expone operaciones de ArcGIS Pro como herramientas MCP mediante un Named Pipe local de Windows.
 
-El MCP incluye 63 herramientas, 52 comandos Add-In, 2 recursos MCP y 2 plantillas de prompts (ejemplos).
+El MCP incluye 65 herramientas MCP, 54 comandos Add-In, 2 recursos MCP y 2 plantillas de prompts.
 
 ---
 
@@ -94,7 +94,7 @@ Archivos principales del servidor:
 - `python-server/prompts/`: plantillas MCP para desarrollo ArcPy y Add-In.
 - `python-server/tests/test_operational_contracts.py`: pruebas contractuales para conteo de herramientas, cobertura de comandos Add-In, gates de release, documentacion publica e higiene del repositorio.
 
-Las herramientas MCP publicas incluyen `spatial_join`, `stage_service_definition`, `run_gp_tool`, `search_arcgis_docs`, `query_feature_service`, `publish_web_layer`, `create_basic_layout`, `export_active_map`, `apply_graduated_symbology`, `save_layer_file` y `describe_dataset`.
+Las herramientas MCP publicas incluyen `spatial_join`, `query_layer`, `export_all_layouts`, `stage_service_definition`, `run_gp_tool`, `search_arcgis_docs`, `query_feature_service`, `publish_web_layer`, `create_basic_layout`, `export_active_map`, `apply_graduated_symbology`, `save_layer_file` y `describe_dataset`.
 
 ---
 

@@ -163,6 +163,16 @@ namespace ArcGisMcpAddin
                         resultData = await DataCommands.GetLayerFieldsAsync(fieldsLayer);
                         break;
 
+                    case "query_layer":
+                        string? queryDataLayer = paramsEl.TryGetProperty("layer_name", out var qdlProp) ? qdlProp.GetString() : null;
+                        string queryWhere = paramsEl.TryGetProperty("where_clause", out var qwProp) ? qwProp.GetString() ?? "1=1" : "1=1";
+                        string queryFields = paramsEl.TryGetProperty("fields", out var qfProp) ? qfProp.GetString() ?? "*" : "*";
+                        int queryLimit = paramsEl.TryGetProperty("limit", out var qlimProp) ? qlimProp.GetInt32() : 100;
+                        bool queryGeometry = paramsEl.TryGetProperty("include_geometry", out var qgProp) && qgProp.GetBoolean();
+                        if (string.IsNullOrEmpty(queryDataLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                        resultData = await DataCommands.QueryLayerAsync(queryDataLayer, queryWhere, queryFields, queryLimit, queryGeometry);
+                        break;
+
                     // Symbology and Labeling Commands
                     case "apply_graduated_symbology":
                         string? graduatedLayer = paramsEl.TryGetProperty("layer_name", out var glProp) ? glProp.GetString() : null;
@@ -251,6 +261,8 @@ namespace ArcGisMcpAddin
                     case "run_gp_tool":
                         string? gpTool = paramsEl.TryGetProperty("tool_name", out var gptProp) ? gptProp.GetString() : null;
                         if (string.IsNullOrEmpty(gpTool)) throw new ArgumentException("Parameter 'tool_name' is required.");
+                        bool gpAllowDelete = paramsEl.TryGetProperty("allow_delete", out var gadProp) && gadProp.GetBoolean();
+                        bool addGpOutputs = paramsEl.TryGetProperty("add_outputs_to_map", out var aomProp) && aomProp.GetBoolean();
 
                         var paramListProp = paramsEl.GetProperty("parameters");
                         string[] gpParams = new string[paramListProp.GetArrayLength()];
@@ -259,7 +271,7 @@ namespace ArcGisMcpAddin
                         {
                             gpParams[index++] = item.GetString() ?? "";
                         }
-                        resultData = await GeoprocessingCommands.RunGpToolAsync(gpTool, gpParams);
+                        resultData = await GeoprocessingCommands.RunGpToolAsync(gpTool, gpParams, gpAllowDelete, addGpOutputs);
                         break;
 
                     // Geodatabase Commands
@@ -376,6 +388,15 @@ namespace ArcGisMcpAddin
                         if (string.IsNullOrEmpty(layoutName)) throw new ArgumentException("Parameter 'layout_name' is required.");
                         if (string.IsNullOrEmpty(outPath)) throw new ArgumentException("Parameter 'output_path' is required.");
                         resultData = await LayoutCommands.ExportLayoutAsync(layoutName, outPath, format, dpi);
+                        break;
+
+                    case "export_all_layouts":
+                        string? layoutsOutDir = paramsEl.TryGetProperty("output_directory", out var aolDirProp) ? aolDirProp.GetString() : null;
+                        string layoutsFormat = paramsEl.TryGetProperty("format", out var aolFmtProp) ? aolFmtProp.GetString() ?? "PDF" : "PDF";
+                        int layoutsDpi = paramsEl.TryGetProperty("resolution", out var aolDpiProp) ? aolDpiProp.GetInt32() : 300;
+                        bool includeMapSeries = !paramsEl.TryGetProperty("include_map_series", out var imsProp) || imsProp.GetBoolean();
+                        if (string.IsNullOrEmpty(layoutsOutDir)) throw new ArgumentException("Parameter 'output_directory' is required.");
+                        resultData = await LayoutCommands.ExportAllLayoutsAsync(layoutsOutDir, layoutsFormat, layoutsDpi, includeMapSeries);
                         break;
 
                     case "create_basic_layout":

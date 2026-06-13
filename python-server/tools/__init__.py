@@ -23,6 +23,7 @@ from tools.data_tools import (
     select_features,
     get_selected_features,
     get_layer_fields,
+    query_layer,
 )
 from tools.geoprocessing_tools import (
     run_gp_tool,
@@ -33,6 +34,7 @@ from tools.geoprocessing_tools import (
 from tools.layout_tools import (
     list_layouts,
     export_layout,
+    export_all_layouts,
     create_basic_layout,
     export_active_map,
     create_map_series,
@@ -105,12 +107,14 @@ __all__ = [
     "select_features",
     "get_selected_features",
     "get_layer_fields",
+    "query_layer",
     "run_gp_tool",
     "buffer_analysis",
     "clip_analysis",
     "spatial_join",
     "list_layouts",
     "export_layout",
+    "export_all_layouts",
     "create_basic_layout",
     "export_active_map",
     "create_map_series",

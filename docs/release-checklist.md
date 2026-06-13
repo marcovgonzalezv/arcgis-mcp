@@ -7,9 +7,9 @@ Usa esta lista antes de crear una version publica del repositorio.
 - El arbol no contiene `bin/`, `obj/`, `__pycache__/`, `.pytest_cache/`, `.vs/` ni paquetes `.esriAddinX` generados.
 - No existen rutas locales, nombres de usuario, carpetas personales ni marcas de entorno de desarrollo en archivos publicos.
 - `spatial_join` esta expuesto una sola vez como herramienta MCP.
-- El contrato publico mantiene 63 herramientas MCP, 2 recursos MCP y 2 plantillas MCP.
+- El contrato publico mantiene 65 herramientas MCP, 2 recursos MCP y 2 plantillas MCP.
 - `stage_service_definition` esta expuesto para convertir `.sddraft` a `.sd` antes de publicar.
-- El Add-In mantiene 52 comandos internos; `ping` es solo comando IPC interno.
+- El Add-In mantiene 54 comandos internos; `ping` es solo comando IPC interno.
 - `CONTRIBUTING.md` y `SECURITY.md` estan actualizados.
 
 ## Validacion local

@@ -102,3 +102,46 @@ def get_layer_fields(layer_name: str, ctx: Context = None) -> str:
         return "\n".join(result)
     else:
         return f"Error retrieving fields for layer '{layer_name}': {resp.get('error')}"
+
+
+def query_layer(
+    layer_name: str,
+    where_clause: str = "1=1",
+    fields: str = "*",
+    limit: int = 100,
+    include_geometry: bool = False,
+    ctx: Context = None,
+) -> str:
+    """
+    Queries attribute rows from an active-map feature layer.
+    """
+    if ctx:
+        ctx.info(f"Querying layer '{layer_name}' with filter '{where_clause}'...")
+    resp = client.send_command(
+        "query_layer",
+        {
+            "layer_name": layer_name,
+            "where_clause": where_clause,
+            "fields": fields,
+            "limit": limit,
+            "include_geometry": include_geometry,
+        },
+        timeout_ms=30000,
+    )
+    if not resp.get("success"):
+        return f"Error querying layer '{layer_name}': {resp.get('message') or resp.get('error')}"
+
+    data = resp.get("data", {})
+    rows = data.get("rows", [])
+    if not rows:
+        return f"No rows found in layer '{layer_name}' for filter '{where_clause}'."
+
+    result = [
+        f"Rows from '{layer_name}' (showing {len(rows)} of requested {data.get('limit', limit)}):"
+    ]
+    for idx, row in enumerate(rows, 1):
+        values = [f"{key}: {value}" for key, value in row.items()]
+        result.append(f"{idx}. {', '.join(values)}")
+    if data.get("limited"):
+        result.append("Result was limited; increase limit to inspect more rows.")
+    return "\n".join(result)

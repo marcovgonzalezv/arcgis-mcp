@@ -14,6 +14,7 @@ PYTHON_SERVER = PROJECT_ROOT / "python-server"
 sys.path.insert(0, str(PYTHON_SERVER))
 
 test_connection = importlib.import_module("test_connection")
+safety = importlib.import_module("tools.safety")
 
 
 class FailingClient:
@@ -47,10 +48,12 @@ class OperationalContractsTest(unittest.TestCase):
             if any(item.startswith("mcp.prompt") for item in decorators):
                 prompts.append(node.name)
 
-        self.assertEqual(63, len(tools))
+        self.assertEqual(65, len(tools))
         self.assertEqual(2, len(resources))
         self.assertEqual(2, len(prompts))
         self.assertIn("spatial_join", tools)
+        self.assertIn("query_layer", tools)
+        self.assertIn("export_all_layouts", tools)
 
     def test_addin_command_registry_matches_handler_cases(self):
         core = (
@@ -82,13 +85,15 @@ class OperationalContractsTest(unittest.TestCase):
         handler_cases = set(re.findall(r'case "([a-z_]+)":', handler))
         public_tools = (addin_commands - {"ping"}) | python_wrappers
 
-        self.assertEqual(52, len(addin_commands))
+        self.assertEqual(54, len(addin_commands))
         self.assertEqual(addin_commands, handler_cases)
         self.assertIn("ping", addin_commands)
         self.assertIn("spatial_join", python_wrappers)
         self.assertNotIn("spatial_join", addin_commands)
         self.assertIn("stage_service_definition", addin_commands)
-        self.assertEqual(63, len(public_tools))
+        self.assertIn("query_layer", addin_commands)
+        self.assertIn("export_all_layouts", addin_commands)
+        self.assertEqual(65, len(public_tools))
 
     def test_public_files_do_not_contain_local_paths_or_ai_branding(self):
         blocked_terms = [
@@ -162,8 +167,25 @@ class OperationalContractsTest(unittest.TestCase):
 
         self.assertNotIn("62 herramientas", docs)
         self.assertNotIn("51 comandos", docs)
-        self.assertIn("63 herramientas MCP", docs)
-        self.assertIn("52 comandos", docs)
+        self.assertIn("65 herramientas MCP", docs)
+        self.assertIn("54 comandos", docs)
+
+    def test_destructive_geoprocessing_requires_explicit_opt_in(self):
+        with self.assertRaises(safety.DestructiveOperationBlocked):
+            safety.guard_destructive_tool("Delete_management")
+
+        safety.guard_destructive_tool("Buffer_analysis")
+        safety.guard_destructive_tool("Delete_management", allow_delete=True)
+
+        addin_source = (
+            PROJECT_ROOT
+            / "arcgis-addin"
+            / "ArcGisMcpAddin"
+            / "Commands"
+            / "GeoprocessingCommands.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("ARCGIS_MCP_ALLOW_DELETE", addin_source)
+        self.assertIn("IsDestructiveTool", addin_source)
 
     def test_release_script_runs_core_validation_steps(self):
         source = (PROJECT_ROOT / "scripts" / "validate_release.ps1").read_text(

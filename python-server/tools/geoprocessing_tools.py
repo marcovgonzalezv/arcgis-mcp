@@ -1,29 +1,55 @@
 from pipe_client import ArcGisPipeClient
 from mcp.server.fastmcp import Context
+from tools.safety import DestructiveOperationBlocked, guard_destructive_tool
 
 client = ArcGisPipeClient()
 
 
-def run_gp_tool(tool_name: str, parameters: list, ctx: Context = None) -> str:
+def run_gp_tool(
+    tool_name: str,
+    parameters: list,
+    ctx: Context = None,
+    add_outputs_to_map: bool = False,
+    allow_delete: bool = False,
+) -> str:
     """
     Executes any ArcGIS Pro geoprocessing tool by name with list of parameters.
     Example: tool_name="Buffer_analysis", parameters=["Roads", "Roads_Buffer", "100 Meters"]
     """
+    try:
+        guard_destructive_tool(tool_name, allow_delete)
+    except DestructiveOperationBlocked as exc:
+        return str(exc)
+
     if ctx:
         ctx.info(
             f"Executing geoprocessing tool '{tool_name}' with parameters {parameters}..."
         )
     resp = client.send_command(
-        "run_gp_tool", {"tool_name": tool_name, "parameters": parameters}
+        "run_gp_tool",
+        {
+            "tool_name": tool_name,
+            "parameters": parameters,
+            "add_outputs_to_map": add_outputs_to_map,
+            "allow_delete": allow_delete,
+        },
+        timeout_ms=120000,
     )
     if resp.get("success"):
-        messages = resp.get("data", {}).get("messages", [])
+        data = resp.get("data", {})
+        messages = data.get("messages", [])
+        outputs = data.get("outputs", [])
         msg_str = (
             "\n".join(messages) if messages else "Execution completed without messages."
         )
-        return f"Geoprocessing tool '{tool_name}' executed successfully.\nMessages:\n{msg_str}"
+        output_str = f"\nOutputs:\n{outputs}" if outputs else ""
+        return (
+            f"Geoprocessing tool '{tool_name}' executed successfully.\n"
+            f"Messages:\n{msg_str}{output_str}"
+        )
     else:
-        return f"Error executing geoprocessing tool '{tool_name}': {resp.get('error')}"
+        error = resp.get("message") or resp.get("error")
+        return f"Error executing geoprocessing tool '{tool_name}': {error}"
 
 
 def buffer_analysis(
@@ -42,7 +68,7 @@ def buffer_analysis(
         )
     # Buffer_analysis [in_features, out_feature_class, buffer_distance_or_field, line_side, line_end_type, dissolve_option, dissolve_field, method]
     params = [input_features, output_feature_class, buffer_distance]
-    return run_gp_tool("Buffer_analysis", params, ctx)
+    return run_gp_tool("Buffer_analysis", params, ctx, add_outputs_to_map=True)
 
 
 def clip_analysis(
@@ -60,7 +86,7 @@ def clip_analysis(
         )
     # Clip_analysis [in_features, clip_features, out_feature_class, cluster_tolerance]
     params = [input_features, clip_features, output_feature_class]
-    return run_gp_tool("Clip_analysis", params, ctx)
+    return run_gp_tool("Clip_analysis", params, ctx, add_outputs_to_map=True)
 
 
 def spatial_join(
@@ -91,4 +117,4 @@ def spatial_join(
         "",  # Skip field mapping (uses defaults)
         match_option,
     ]
-    return run_gp_tool("SpatialJoin_analysis", params, ctx)
+    return run_gp_tool("SpatialJoin_analysis", params, ctx, add_outputs_to_map=True)
