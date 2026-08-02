@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
 ]
 dependencies = [
-    "mcp>=1.28.1",
+    "mcp>=2.0.0",
     "pywin32>=312",
     "pydantic>=2.13.4",
 ]
