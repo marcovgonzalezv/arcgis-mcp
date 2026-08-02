@@ -19,7 +19,7 @@ If you downloaded the release artifacts (`ArcGisMcpAddin.esriAddinX`, the `arcgi
 .\setup.ps1
 ```
 
-`setup.ps1` locates Python (ArcGIS Pro conda or system Python), creates an isolated virtual environment, installs the wheel, registers the Add-In in ArcGIS Pro, and prints the ready-to-paste MCP client configuration. No build toolchain required.
+`setup.ps1` locates Python (ArcGIS Pro, system, or Conda), creates an isolated virtual environment, installs the wheel, registers the Add-In in ArcGIS Pro, and prints the ready-to-paste MCP client configuration. No build toolchain required.
 
 After it finishes: open ArcGIS Pro 3.7, confirm the **ArcGIS MCP** tab, and restart your MCP client. The tracks below are only needed when building from source.
 

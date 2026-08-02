@@ -19,7 +19,7 @@ Si descargaste los artefactos del release (`ArcGisMcpAddin.esriAddinX`, el `arcg
 .\setup.ps1
 ```
 
-`setup.ps1` localiza Python (el conda de ArcGIS Pro o el del sistema), crea un entorno virtual aislado, instala la wheel, registra el Add-In en ArcGIS Pro e imprime la configuracion lista para pegar en tu cliente MCP. No requiere toolchain de compilacion.
+`setup.ps1` localiza Python (en ArcGIS Pro, del sistema o Conda), crea un entorno virtual aislado, instala la wheel, registra el Add-In en ArcGIS Pro e imprime la configuracion lista para pegar en tu cliente MCP. No requiere toolchain de compilacion.
 
 Al terminar: abre ArcGIS Pro 3.7, confirma la pestana **ArcGIS MCP** y reinicia tu cliente MCP. Los recorridos siguientes solo se necesitan cuando se compila desde el codigo fuente.
 

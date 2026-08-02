@@ -2,7 +2,7 @@
 # Bootstrap installer for end users of arcgis-mcp.
 #
 # What it does:
-#   1. Locates a usable Python interpreter (ArcGIS Pro conda first, then system).
+#   1. Locates a usable Python interpreter (ArcGIS Pro, system, or Conda).
 #   2. Creates a dedicated virtual environment at %LOCALAPPDATA%\arcgis-mcp\env.
 #   3. Installs the arcgis-mcp-server wheel found next to this script (or from PyPI).
 #   4. Registers the .esriAddinX in the ArcGIS Pro Add-Ins folder if present.
@@ -45,9 +45,26 @@ function Find-Python {
     if (Test-Path $arcgisPython) { $candidates += $arcgisPython }
 
     $condaExe = @(
-        (Join-Path $env:PROGRAMFILES "ArcGIS\Pro\bin\Python\Scripts\conda.exe"),
-        (Get-Command conda.exe -ErrorAction SilentlyContinue).Source
+        (Get-Command conda.exe -ErrorAction SilentlyContinue).Source,
+        (Join-Path $env:PROGRAMFILES "ArcGIS\Pro\bin\Python\Scripts\conda.exe")
     ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    if ($condaExe) {
+        try {
+            $condaBase = (& $condaExe info --base 2>$null).Trim()
+            if ($condaBase -and (Test-Path $condaBase)) {
+                $condaPy = Join-Path $condaBase "python.exe"
+                if (Test-Path $condaPy) { $candidates += $condaPy }
+            }
+        } catch { }
+    }
+    foreach ($p in @(
+        "$env:USERPROFILE\anaconda3\python.exe",
+        "$env:USERPROFILE\miniconda3\python.exe",
+        "$env:USERPROFILE\miniforge3\python.exe",
+        "$env:USERPROFILE\mambaforge\python.exe"
+    )) {
+        if (Test-Path $p) { $candidates += $p }
+    }
 
     foreach ($pyName in @("python.exe", "py.exe")) {
         $g = Get-Command $pyName -ErrorAction SilentlyContinue
