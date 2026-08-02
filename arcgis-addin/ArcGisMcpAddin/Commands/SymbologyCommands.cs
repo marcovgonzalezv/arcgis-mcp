@@ -320,5 +320,95 @@ namespace ArcGisMcpAddin.Commands
             var messages = result.Messages?.Select(m => $"[{m.Type}] {m.Text}") ?? Enumerable.Empty<string>();
             return string.Join("\n", messages);
         }
+
+        public static Task<object> SetLayerSymbolAsync(
+            string layerName, int r, int g, int b,
+            double width = 0, double alpha = 100)
+        {
+            return QueuedTask.Run<object>(() =>
+            {
+                var layer = GetFeatureLayer(layerName);
+                var def = layer.GetDefinition() as CIMFeatureLayer;
+
+                if (def?.Renderer is not CIMSimpleRenderer simpleRenderer)
+                {
+                    throw new InvalidOperationException(
+                        $"Layer '{layerName}' does not use a simple renderer. " +
+                        "Convert to single-symbol symbology first.");
+                }
+
+                var color = ColorFactory.Instance.CreateRGBColor(
+                    Math.Clamp(r, 0, 255),
+                    Math.Clamp(g, 0, 255),
+                    Math.Clamp(b, 0, 255),
+                    Math.Clamp(alpha, 0, 100));
+
+                var geometryType = layer.ShapeType;
+                string symbolType;
+
+                if (simpleRenderer.Symbol?.Symbol is CIMLineSymbol lineSymbol)
+                {
+                    symbolType = "line";
+                    foreach (var symLayer in lineSymbol.SymbolLayers)
+                    {
+                        if (symLayer is CIMSolidStroke stroke)
+                        {
+                            stroke.Color = color;
+                            if (width > 0) stroke.Width = width;
+                        }
+                    }
+                }
+                else if (simpleRenderer.Symbol?.Symbol is CIMPolygonSymbol polySymbol)
+                {
+                    symbolType = "polygon";
+                    foreach (var symLayer in polySymbol.SymbolLayers)
+                    {
+                        if (symLayer is CIMSolidFill fill)
+                        {
+                            fill.Color = color;
+                        }
+                        if (symLayer is CIMSolidStroke stroke && width > 0)
+                        {
+                            stroke.Width = width;
+                        }
+                    }
+                }
+                else if (simpleRenderer.Symbol?.Symbol is CIMPointSymbol pointSymbol)
+                {
+                    symbolType = "point";
+                    foreach (var symLayer in pointSymbol.SymbolLayers)
+                    {
+                        if (symLayer is CIMVectorMarker marker && marker.MarkerGraphics != null)
+                        {
+                            foreach (var graphic in marker.MarkerGraphics)
+                            {
+                                if (graphic?.Symbol is CIMPolygonSymbol markerPoly)
+                                {
+                                    foreach (var ml in markerPoly.SymbolLayers)
+                                    {
+                                        if (ml is CIMSolidFill fill) fill.Color = color;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    symbolType = geometryType.ToString();
+                }
+
+                layer.SetDefinition(def);
+
+                return new
+                {
+                    success = true,
+                    layer_name = layerName,
+                    symbol_type = symbolType,
+                    color = $"#{r:X2}{g:X2}{b:X2}",
+                    width = width > 0 ? width : (double?)null
+                };
+            });
+        }
     }
 }

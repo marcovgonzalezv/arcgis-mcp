@@ -265,6 +265,52 @@ namespace ArcGisMcpAddin.Commands
             });
         }
 
+        public static Task<object> AddLayerToGroupAsync(string groupName, string[] layerNames)
+        {
+            return QueuedTask.Run<object>(() =>
+            {
+                var activeView = MapView.Active;
+                if (activeView == null)
+                {
+                    throw new InvalidOperationException("No active map view found.");
+                }
+
+                var map = activeView.Map;
+
+                var groupLayer = map.GetLayersAsFlattenedList()
+                    .OfType<GroupLayer>()
+                    .FirstOrDefault(gl => gl.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
+
+                if (groupLayer == null)
+                {
+                    throw new ArgumentException($"Group layer '{groupName}' not found in the active map.");
+                }
+
+                var moved = new List<string>();
+                var notFound = new List<string>();
+                var allLayers = map.GetLayersAsFlattenedList();
+
+                foreach (var layerName in layerNames)
+                {
+                    var layer = allLayers.FirstOrDefault(l =>
+                        l.Name.Equals(layerName, StringComparison.OrdinalIgnoreCase) &&
+                        !(l is GroupLayer));
+
+                    if (layer != null)
+                    {
+                        map.MoveLayer(layer, groupLayer, -1);
+                        moved.Add(layer.Name);
+                    }
+                    else
+                    {
+                        notFound.Add(layerName);
+                    }
+                }
+
+                return new { success = true, group_name = groupLayer.Name, layers_moved = moved, layers_not_found = notFound };
+            });
+        }
+
         private static Layer GetLayer(string layerName)
         {
             var activeView = MapView.Active;

@@ -164,3 +164,40 @@ def apply_raster_colorizer(
     return (
         f"Error applying raster colorizer: {resp.get('message') or resp.get('error')}"
     )
+
+
+def set_layer_symbol(
+    layer_name: str,
+    r: int,
+    g: int,
+    b: int,
+    width: float = 0,
+    alpha: float = 100,
+    ctx: Context = None,
+) -> str:
+    """
+    Sets the color (RGB) and optionally the width of a feature layer's simple renderer
+    by manipulating its CIM definition directly (GetDefinition/SetDefinition).
+    Works on line, polygon, and point layers with a CIMSimpleRenderer.
+    """
+    if ctx:
+        ctx.info(f"Setting symbol for '{layer_name}' to RGB({r},{g},{b})...")
+    resp = client.send_command(
+        "set_layer_symbol",
+        {
+            "layer_name": layer_name,
+            "r": r,
+            "g": g,
+            "b": b,
+            "width": width,
+            "alpha": alpha,
+        },
+    )
+    if resp.get("success"):
+        data = resp.get("data", {})
+        color = data.get("color", "")
+        sym_type = data.get("symbol_type", "")
+        w = data.get("width")
+        w_info = f", width={w}pt" if w else ""
+        return f"Symbol updated for '{layer_name}' ({sym_type}): {color}{w_info}."
+    return f"Error: {resp.get('message') or resp.get('error')}"

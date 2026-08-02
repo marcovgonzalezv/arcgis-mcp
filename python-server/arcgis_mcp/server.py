@@ -141,6 +141,14 @@ def create_group_layer(
 
 
 @mcp.tool()
+def add_layer_to_group(group_name: str, layer_names: list, ctx: Context = None) -> str:
+    """
+    Moves existing layers into an existing group layer in the active map.
+    """
+    return tools.add_layer_to_group(group_name, layer_names, ctx)
+
+
+@mcp.tool()
 def set_layer_transparency(
     layer_name: str, transparency: float, ctx: Context = None
 ) -> str:
@@ -284,6 +292,24 @@ def apply_symbology_from_layer(
     Applies symbology from an existing layer or .lyrx file.
     """
     return tools.apply_symbology_from_layer(target_layer, symbology_layer, ctx)
+
+
+@mcp.tool()
+def set_layer_symbol(
+    layer_name: str,
+    r: int,
+    g: int,
+    b: int,
+    width: float = 0,
+    alpha: float = 100,
+    ctx: Context = None,
+) -> str:
+    """
+    Sets the color (RGB 0-255) and optionally the width of a feature layer's simple renderer
+    via direct CIM manipulation (GetDefinition/SetDefinition). Works on line, polygon, and point layers.
+    Alpha is 0-100 (default 100 = fully opaque).
+    """
+    return tools.set_layer_symbol(layer_name, r, g, b, width, alpha, ctx)
 
 
 @mcp.tool()

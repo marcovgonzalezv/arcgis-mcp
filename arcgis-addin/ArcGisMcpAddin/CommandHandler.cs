@@ -124,6 +124,20 @@ namespace ArcGisMcpAddin
                         resultData = await MapCommands.CreateGroupLayerAsync(groupName, groupLayerNames.ToArray());
                         break;
 
+                    case "add_layer_to_group":
+                        string? atgGroupName = paramsEl.TryGetProperty("group_name", out var atgProp) ? atgProp.GetString() : null;
+                        var atgLayerNames = new List<string>();
+                        if (paramsEl.ValueKind != JsonValueKind.Undefined && paramsEl.TryGetProperty("layer_names", out var atgLnProp) && atgLnProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in atgLnProp.EnumerateArray())
+                            {
+                                atgLayerNames.Add(item.GetString() ?? "");
+                            }
+                        }
+                        if (string.IsNullOrEmpty(atgGroupName)) throw new ArgumentException("Parameter 'group_name' is required.");
+                        resultData = await MapCommands.AddLayerToGroupAsync(atgGroupName, atgLayerNames.ToArray());
+                        break;
+
                     case "set_layer_transparency":
                         string? transparencyLayer = paramsEl.TryGetProperty("layer_name", out var tlProp) ? tlProp.GetString() : null;
                         if (string.IsNullOrEmpty(transparencyLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
@@ -215,6 +229,17 @@ namespace ArcGisMcpAddin
                         if (string.IsNullOrEmpty(targetLayer)) throw new ArgumentException("Parameter 'target_layer' is required.");
                         if (string.IsNullOrEmpty(symbologyLayer)) throw new ArgumentException("Parameter 'symbology_layer' is required.");
                         resultData = await SymbologyCommands.ApplySymbologyFromLayerAsync(targetLayer, symbologyLayer);
+                        break;
+
+                    case "set_layer_symbol":
+                        string? slsLayer = paramsEl.TryGetProperty("layer_name", out var slsProp) ? slsProp.GetString() : null;
+                        if (string.IsNullOrEmpty(slsLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                        int symR = paramsEl.TryGetProperty("r", out var rProp) ? rProp.GetInt32() : 0;
+                        int symG = paramsEl.TryGetProperty("g", out var gProp) ? gProp.GetInt32() : 0;
+                        int symB = paramsEl.TryGetProperty("b", out var bProp) ? bProp.GetInt32() : 0;
+                        double symWidth = paramsEl.TryGetProperty("width", out var slsWProp) ? slsWProp.GetDouble() : 0;
+                        double symAlpha = paramsEl.TryGetProperty("alpha", out var aProp) ? aProp.GetDouble() : 100;
+                        resultData = await SymbologyCommands.SetLayerSymbolAsync(slsLayer, symR, symG, symB, symWidth, symAlpha);
                         break;
 
                     case "label_layer":

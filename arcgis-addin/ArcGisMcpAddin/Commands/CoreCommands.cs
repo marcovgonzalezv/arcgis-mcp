@@ -11,8 +11,8 @@ namespace ArcGisMcpAddin.Commands
 {
     public static class CoreCommands
     {
-        public const string AddinVersion = "0.4.2";
-        public const string McpVersion = "0.4.2";
+        public const string AddinVersion = "0.4.3";
+        public const string McpVersion = "0.4.3";
 
         public static Task<object> HealthCheckAsync()
         {
@@ -56,6 +56,7 @@ namespace ArcGisMcpAddin.Commands
         {
             "add_dynamic_text",
             "add_layer_to_map",
+            "add_layer_to_group",
             "apply_graduated_symbology",
             "apply_raster_colorizer",
             "apply_symbology_from_layer",
@@ -101,6 +102,7 @@ namespace ArcGisMcpAddin.Commands
             "save_project_as",
             "select_features",
             "set_definition_query",
+            "set_layer_symbol",
             "set_layer_transparency",
             "set_map_extent",
             "stage_service_definition",

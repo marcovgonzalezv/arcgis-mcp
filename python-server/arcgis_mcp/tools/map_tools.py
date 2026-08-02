@@ -139,6 +139,27 @@ def create_group_layer(
     return f"Error creating group layer: {resp.get('message') or resp.get('error')}"
 
 
+def add_layer_to_group(group_name: str, layer_names: list, ctx: Context = None) -> str:
+    """
+    Moves existing layers into an existing group layer in the active map.
+    """
+    if ctx:
+        ctx.info(f"Moving {len(layer_names)} layer(s) into group '{group_name}'...")
+    resp = client.send_command(
+        "add_layer_to_group",
+        {"group_name": group_name, "layer_names": layer_names},
+    )
+    if resp.get("success"):
+        data = resp.get("data", {})
+        moved = data.get("layers_moved", [])
+        not_found = data.get("layers_not_found", [])
+        msg = f"Moved {len(moved)} layer(s) into '{group_name}'."
+        if not_found:
+            msg += f" Not found: {', '.join(not_found)}."
+        return msg
+    return f"Error: {resp.get('message') or resp.get('error')}"
+
+
 def set_layer_transparency(
     layer_name: str, transparency: float, ctx: Context = None
 ) -> str:

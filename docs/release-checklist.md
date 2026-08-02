@@ -7,9 +7,9 @@ Use this list before creating a public release of the repository.
 - The tree does not contain `bin/`, `obj/`, `__pycache__/`, `.pytest_cache/`, `.vs/`, or generated `.esriAddinX` packages.
 - No local paths, usernames, personal folders, or development environment markers exist in public files.
 - `spatial_join` is exposed exactly once as an MCP tool.
-- The public contract maintains 66 MCP tools, 2 MCP resources, and 2 prompt templates.
+- The public contract maintains 68 MCP tools, 2 MCP resources, and 2 prompt templates.
 - `stage_service_definition` is exposed to convert `.sddraft` to `.sd` before publishing.
-- The Add-In maintains 55 internal commands; `ping` is an internal IPC command only.
+- The Add-In maintains 57 internal commands; `ping` is an internal IPC command only.
 - `CONTRIBUTING.md` and `SECURITY.md` are up to date.
 
 ## Local validation

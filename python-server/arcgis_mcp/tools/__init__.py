@@ -14,6 +14,7 @@ from .map_tools import (
     set_map_extent,
     add_layer_to_map,
     create_group_layer,
+    add_layer_to_group,
     set_layer_transparency,
     set_definition_query,
     clear_selection,
@@ -51,6 +52,7 @@ from .symbology_tools import (
     get_layer_symbology,
     update_class_breaks,
     apply_raster_colorizer,
+    set_layer_symbol,
 )
 from .layer_io_tools import (
     save_layer_file,
@@ -101,6 +103,7 @@ __all__ = [
     "set_map_extent",
     "add_layer_to_map",
     "create_group_layer",
+    "add_layer_to_group",
     "set_layer_transparency",
     "set_definition_query",
     "clear_selection",
@@ -130,6 +133,7 @@ __all__ = [
     "get_layer_symbology",
     "update_class_breaks",
     "apply_raster_colorizer",
+    "set_layer_symbol",
     "save_layer_file",
     "load_layer_file",
     "export_layer",

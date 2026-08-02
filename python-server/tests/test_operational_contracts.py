@@ -48,7 +48,7 @@ class OperationalContractsTest(unittest.TestCase):
             if any(item.startswith("mcp.prompt") for item in decorators):
                 prompts.append(node.name)
 
-        self.assertEqual(66, len(tools))
+        self.assertEqual(68, len(tools))
         self.assertEqual(2, len(resources))
         self.assertEqual(2, len(prompts))
         self.assertIn("spatial_join", tools)
@@ -85,7 +85,7 @@ class OperationalContractsTest(unittest.TestCase):
         handler_cases = set(re.findall(r'case "([a-z_]+)":', handler))
         public_tools = (addin_commands - {"ping"}) | python_wrappers
 
-        self.assertEqual(55, len(addin_commands))
+        self.assertEqual(57, len(addin_commands))
         self.assertEqual(addin_commands, handler_cases)
         self.assertIn("ping", addin_commands)
         self.assertIn("spatial_join", python_wrappers)
@@ -93,7 +93,7 @@ class OperationalContractsTest(unittest.TestCase):
         self.assertIn("stage_service_definition", addin_commands)
         self.assertIn("query_layer", addin_commands)
         self.assertIn("export_all_layouts", addin_commands)
-        self.assertEqual(66, len(public_tools))
+        self.assertEqual(68, len(public_tools))
 
     def test_public_files_do_not_contain_local_paths_or_ai_branding(self):
         blocked_terms = [
@@ -165,10 +165,10 @@ class OperationalContractsTest(unittest.TestCase):
             ]
         )
 
-        self.assertNotIn("65 tools", docs)
-        self.assertNotIn("54 commands", docs)
-        self.assertIn("66 MCP tools", docs)
-        self.assertIn("55 Add-In commands", docs)
+        self.assertNotIn("66 tools", docs)
+        self.assertNotIn("55 commands", docs)
+        self.assertIn("68 MCP tools", docs)
+        self.assertIn("57 Add-In commands", docs)
 
     def test_destructive_geoprocessing_requires_explicit_opt_in(self):
         with self.assertRaises(safety.DestructiveOperationBlocked):
