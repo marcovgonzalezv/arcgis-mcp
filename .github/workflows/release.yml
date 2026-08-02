@@ -127,10 +127,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
+      - name: Verify .NET SDK available
+        run: dotnet --version
 
       - name: Build Add-In
         working-directory: arcgis-addin
