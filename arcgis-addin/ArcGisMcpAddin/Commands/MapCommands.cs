@@ -233,6 +233,38 @@ namespace ArcGisMcpAddin.Commands
             ).Unwrap();
         }
 
+        public static Task<object> CreateGroupLayerAsync(string groupName, string[] layerNames)
+        {
+            return QueuedTask.Run<object>(() =>
+            {
+                var activeView = MapView.Active;
+                if (activeView == null)
+                {
+                    throw new InvalidOperationException("No active map view found.");
+                }
+
+                var map = activeView.Map;
+                var groupLayer = LayerFactory.Instance.CreateGroupLayer(map, 0, groupName);
+
+                var moved = new List<string>();
+                if (layerNames != null && layerNames.Length > 0)
+                {
+                    var allLayers = map.GetLayersAsFlattenedList();
+                    foreach (var layerName in layerNames)
+                    {
+                        var layer = allLayers.FirstOrDefault(l => l.Name.Equals(layerName, StringComparison.OrdinalIgnoreCase));
+                        if (layer != null)
+                        {
+                            map.MoveLayer(layer, groupLayer, -1);
+                            moved.Add(layer.Name);
+                        }
+                    }
+                }
+
+                return new { success = true, group_name = groupLayer.Name, layers_moved = moved };
+            });
+        }
+
         private static Layer GetLayer(string layerName)
         {
             var activeView = MapView.Active;

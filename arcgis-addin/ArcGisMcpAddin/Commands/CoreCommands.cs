@@ -11,8 +11,8 @@ namespace ArcGisMcpAddin.Commands
 {
     public static class CoreCommands
     {
-        public const string AddinVersion = "0.4.1";
-        public const string McpVersion = "0.4.1";
+        public const string AddinVersion = "0.4.2";
+        public const string McpVersion = "0.4.2";
 
         public static Task<object> HealthCheckAsync()
         {
@@ -65,6 +65,7 @@ namespace ArcGisMcpAddin.Commands
             "create_basic_layout",
             "create_domain",
             "create_feature",
+            "create_group_layer",
             "create_map_series",
             "delete_selected_features",
             "describe_dataset",

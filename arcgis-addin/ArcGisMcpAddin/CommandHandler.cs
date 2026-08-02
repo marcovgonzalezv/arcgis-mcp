@@ -110,6 +110,20 @@ namespace ArcGisMcpAddin
                         resultData = await MapCommands.AddLayerToMapAsync(dataPath, addLayerName);
                         break;
 
+                    case "create_group_layer":
+                        string? groupName = paramsEl.TryGetProperty("group_name", out var grpProp) ? grpProp.GetString() : null;
+                        var groupLayerNames = new List<string>();
+                        if (paramsEl.ValueKind != JsonValueKind.Undefined && paramsEl.TryGetProperty("layer_names", out var lnpProp) && lnpProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in lnpProp.EnumerateArray())
+                            {
+                                groupLayerNames.Add(item.GetString() ?? "");
+                            }
+                        }
+                        if (string.IsNullOrEmpty(groupName)) throw new ArgumentException("Parameter 'group_name' is required.");
+                        resultData = await MapCommands.CreateGroupLayerAsync(groupName, groupLayerNames.ToArray());
+                        break;
+
                     case "set_layer_transparency":
                         string? transparencyLayer = paramsEl.TryGetProperty("layer_name", out var tlProp) ? tlProp.GetString() : null;
                         if (string.IsNullOrEmpty(transparencyLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");

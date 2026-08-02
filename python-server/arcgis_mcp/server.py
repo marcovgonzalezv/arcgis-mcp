@@ -131,6 +131,16 @@ def add_layer_to_map(data_path: str, layer_name: str = "", ctx: Context = None) 
 
 
 @mcp.tool()
+def create_group_layer(
+    group_name: str, layer_names: list = None, ctx: Context = None
+) -> str:
+    """
+    Creates a group layer in the active map, optionally moving existing layers into it.
+    """
+    return tools.create_group_layer(group_name, layer_names, ctx)
+
+
+@mcp.tool()
 def set_layer_transparency(
     layer_name: str, transparency: float, ctx: Context = None
 ) -> str:

@@ -1,5 +1,5 @@
 <ArcGIS defaultAssembly="ArcGisMcpAddin.dll" defaultNamespace="ArcGisMcpAddin" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{d0b64d1f-827b-4b21-9875-cf65f5dfd2d3}" version="0.4.1" desktopVersion="3.7">
+  <AddInInfo id="{d0b64d1f-827b-4b21-9875-cf65f5dfd2d3}" version="0.4.2" desktopVersion="3.7">
     <Name>ArcGIS Pro MCP Server Bridge</Name>
     <Description>Unified MCP Bridge Add-In. Opens a local Named Pipe server (\\.\pipe\ArcGisMcpBridge) for ArcGIS Pro project, map, layer, geoprocessing, and layout automation.</Description>
     <Image>Images\ArcGisMcp32.png</Image>
