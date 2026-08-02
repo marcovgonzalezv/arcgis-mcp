@@ -1,16 +1,14 @@
 using System;
-using System.IO;
 using System.IO.Pipes;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using StreamJsonRpc;
 
 namespace ArcGisMcpAddin
 {
     public class PipeServer
     {
         private const string PipeName = "ArcGisMcpBridge";
-        private const int MaxRequestBytes = 10 * 1024 * 1024;
         private CancellationTokenSource? _cts;
         private Task? _serverTask;
 
@@ -22,7 +20,7 @@ namespace ArcGisMcpAddin
 
             _cts = new CancellationTokenSource();
             _serverTask = Task.Run(() => ListenLoopAsync(_cts.Token));
-            System.Diagnostics.Debug.WriteLine("ArcGIS MCP Named Pipe Server started.");
+            System.Diagnostics.Debug.WriteLine("ArcGIS MCP Named Pipe Server started (StreamJsonRpc).");
         }
 
         public void Stop()
@@ -32,7 +30,6 @@ namespace ArcGisMcpAddin
             _cts?.Cancel();
             try
             {
-                // Wait briefly for the loop to clean up
                 _serverTask?.Wait(1000);
             }
             catch (Exception ex)
@@ -60,14 +57,19 @@ namespace ArcGisMcpAddin
                         PipeDirection.InOut,
                         1,
                         PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous
-                    );
+                        PipeOptions.Asynchronous);
 
                     await pipeServer.WaitForConnectionAsync(token);
 
                     if (token.IsCancellationRequested) break;
 
-                    await ProcessClientRequestAsync(pipeServer, token);
+                    var formatter = new JsonMessageFormatter();
+                    var handler = new LengthHeaderMessageHandler(pipeServer, pipeServer, formatter);
+                    using var rpc = new JsonRpc(handler);
+                    rpc.AddLocalRpcTarget(new McpRpcService());
+                    rpc.StartListening();
+
+                    await rpc.Completion;
                 }
                 catch (OperationCanceledException)
                 {
@@ -76,82 +78,16 @@ namespace ArcGisMcpAddin
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Pipe server connection error: {ex.Message}");
-                    await Task.Delay(500, token);
+                    try { await Task.Delay(500, token); } catch { break; }
                 }
                 finally
                 {
                     if (pipeServer != null)
                     {
-                        try
-                        {
-                            if (pipeServer.IsConnected)
-                            {
-                                pipeServer.Disconnect();
-                            }
-                        }
-                        catch (IOException ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Pipe disconnect error: {ex.Message}");
-                        }
-                        catch (InvalidOperationException ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Pipe disconnect skipped: {ex.Message}");
-                        }
-                        pipeServer.Dispose();
+                        await pipeServer.DisposeAsync();
                     }
                 }
             }
-        }
-
-        private async Task ProcessClientRequestAsync(NamedPipeServerStream pipeStream, CancellationToken token)
-        {
-            byte[] lengthBytes = await ReadExactlyAsync(pipeStream, sizeof(int), token);
-            int requestLength = BitConverter.ToInt32(lengthBytes, 0);
-
-            if (requestLength <= 0 || requestLength > MaxRequestBytes)
-            {
-                string errorMessage = requestLength <= 0
-                    ? "Invalid request length received from client."
-                    : $"Request of {requestLength} bytes exceeds the maximum allowed size of {MaxRequestBytes} bytes.";
-                await WriteResponseAsync(pipeStream, CommandHandler.SerializeError(errorMessage, "INVALID_REQUEST"), token);
-                return;
-            }
-
-            byte[] requestBytes = await ReadExactlyAsync(pipeStream, requestLength, token);
-            string requestJson = Encoding.UTF8.GetString(requestBytes);
-            string responseJson = await CommandHandler.HandleAsync(requestJson);
-
-            await WriteResponseAsync(pipeStream, responseJson, token);
-        }
-
-        private static async Task WriteResponseAsync(NamedPipeServerStream pipeStream, string responseJson, CancellationToken token)
-        {
-            byte[] responseBytes = Encoding.UTF8.GetBytes(responseJson);
-            byte[] responseLength = BitConverter.GetBytes(responseBytes.Length);
-
-            await pipeStream.WriteAsync(responseLength, token);
-            await pipeStream.WriteAsync(responseBytes, token);
-            await pipeStream.FlushAsync(token);
-            pipeStream.WaitForPipeDrain();
-        }
-
-        private static async Task<byte[]> ReadExactlyAsync(Stream stream, int length, CancellationToken token)
-        {
-            byte[] buffer = new byte[length];
-            int offset = 0;
-
-            while (offset < length)
-            {
-                int read = await stream.ReadAsync(buffer.AsMemory(offset, length - offset), token);
-                if (read == 0)
-                {
-                    throw new EndOfStreamException("The client disconnected before the full request was read.");
-                }
-
-                offset += read;
-            }
-
-            return buffer;
         }
     }
 }

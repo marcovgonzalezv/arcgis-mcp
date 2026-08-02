@@ -1,10 +1,12 @@
-import time
+import itertools
 import json
 import struct
+import time
 import warnings
-import win32pipe
-import win32file
+
 import pywintypes
+import win32file
+import win32pipe
 
 PIPE_NAME = r"\\.\pipe\ArcGisMcpBridge"
 DEFAULT_TIMEOUT_MS = 5000
@@ -13,6 +15,8 @@ DEFAULT_RETRY_DELAY_MS = 250
 
 
 class ArcGisPipeClient:
+    _id_counter = itertools.count(1)
+
     def __init__(
         self,
         pipe_name=PIPE_NAME,
@@ -26,35 +30,28 @@ class ArcGisPipeClient:
         self.retry_delay_ms = retry_delay_ms
 
     def _connect(self, timeout_ms=3000):
-        """
-        Attempts to connect to the named pipe.
-        Retries if the pipe is busy or not found within the timeout.
-        """
         start_time = time.time()
         while True:
             try:
-                # Wait for the pipe to become available
                 win32pipe.WaitNamedPipe(self.pipe_name, 1000)
 
-                # Open the pipe handle
                 handle = win32file.CreateFile(
                     self.pipe_name,
                     win32file.GENERIC_READ | win32file.GENERIC_WRITE,
-                    0,  # No sharing
-                    None,  # Default security
+                    0,
+                    None,
                     win32file.OPEN_EXISTING,
-                    0,  # Default attributes
+                    0,
                     None,
                 )
-
                 return handle
             except pywintypes.error as e:
                 err_code = e.args[0]
-                # 2 = ERROR_FILE_NOT_FOUND, 231 = ERROR_PIPE_BUSY
                 if err_code in (2, 231):
                     if (time.time() - start_time) * 1000 > timeout_ms:
                         raise TimeoutError(
-                            f"Connection to ArcGIS Pro pipe timed out after {timeout_ms}ms. Is ArcGIS Pro running and Add-In loaded?"
+                            f"Connection to ArcGIS Pro pipe timed out after {timeout_ms}ms."
+                            " Is ArcGIS Pro running and Add-In loaded?"
                         )
                     time.sleep(0.2)
                     continue
@@ -82,10 +79,6 @@ class ArcGisPipeClient:
     def send_command(
         self, command: str, params: dict = None, timeout_ms=None, retries=None
     ) -> dict:
-        """
-        Sends a JSON-formatted command to the C# ArcGIS Pro Add-In,
-        and waits for the response using length-prefixed framing.
-        """
         timeout = timeout_ms or self.timeout_ms
         attempts = self.retries if retries is None else retries
         started = time.perf_counter()
@@ -115,35 +108,48 @@ class ArcGisPipeClient:
         }
 
     def _send_once(self, command: str, params: dict, timeout_ms: int) -> dict:
-        if params is None:
-            params = {}
+        request_id = next(self._id_counter)
+        rpc_request = {
+            "jsonrpc": "2.0",
+            "method": "Invoke",
+            "params": [command, params],
+            "id": request_id,
+        }
 
-        request = {"command": command, "params": params}
-
-        request_bytes = json.dumps(request).encode("utf-8")
-        # 4-byte unsigned little-endian length prefix
+        request_bytes = json.dumps(rpc_request).encode("utf-8")
         length_prefix = struct.pack("<I", len(request_bytes))
 
         handle = None
         try:
             handle = self._connect(timeout_ms)
 
-            # Send length prefix followed by the JSON payload
             win32file.WriteFile(handle, length_prefix)
             win32file.WriteFile(handle, request_bytes)
 
-            # Read response: First 4 bytes representing length prefix (little endian)
             length_prefix_resp = self._read_exactly(handle, 4)
             resp_length = struct.unpack("<I", length_prefix_resp)[0]
 
-            # Read response body
             resp_bytes = self._read_exactly(handle, resp_length)
-            response = json.loads(resp_bytes.decode("utf-8"))
-            return response
+            rpc_response = json.loads(resp_bytes.decode("utf-8"))
+
+            if "error" in rpc_response:
+                err = rpc_response["error"]
+                message = err.get("message", str(err))
+                return {
+                    "success": False,
+                    "error_code": str(err.get("code", "RPC_ERROR")),
+                    "message": message,
+                    "error": message,
+                    "data": None,
+                    "elapsed_ms": 0,
+                }
+
+            return rpc_response.get("result", {})
 
         except pywintypes.error as e:
             raise IOError(
-                f"Windows IPC error communicating with ArcGIS Pro: {e.strerror} (Code {e.winerror})"
+                f"Windows IPC error communicating with ArcGIS Pro: {e.strerror}"
+                f" (Code {e.winerror})"
             ) from e
         finally:
             if handle is not None:

@@ -11,8 +11,8 @@ namespace ArcGisMcpAddin.Commands
 {
     public static class CoreCommands
     {
-        public const string AddinVersion = "0.4.3";
-        public const string McpVersion = "0.4.3";
+        public const string AddinVersion = "0.4.4";
+        public const string McpVersion = "0.4.4";
 
         public static Task<object> HealthCheckAsync()
         {
