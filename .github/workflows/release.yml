@@ -171,6 +171,9 @@ jobs:
           name: release-addin
           path: dist
 
+      - name: Copy setup.ps1 into dist
+        run: Copy-Item setup.ps1 dist\setup.ps1
+
       - name: Regenerate checksums (all assets)
         working-directory: dist
         run: |
@@ -201,6 +204,7 @@ jobs:
             - `ArcGisMcpAddin.esriAddinX` — ArcGIS Pro Add-In (built on the self-hosted runner with ArcGIS Pro 3.7). Double-click or use Add-In Manager to install.
             - `arcgis_mcp_server-${{ steps.ver.outputs.version }}-py3-none-any.whl` — Python MCP server (`pip install <file>.whl` or via `setup.ps1`).
             - `arcgis_mcp_server-${{ steps.ver.outputs.version }}.tar.gz` — source distribution.
+            - `setup.ps1` — end-user installer (locates Python, creates venv, installs wheel, registers Add-In).
             - `checksums.txt` — SHA256 of every asset.
 
             ### End-user install
@@ -210,6 +214,7 @@ jobs:
             dist/ArcGisMcpAddin.esriAddinX
             dist/*.whl
             dist/*.tar.gz
+            dist/setup.ps1
             dist/checksums.txt
 
   # ------------------------------------------------------------------
