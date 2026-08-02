@@ -1,4 +1,4 @@
-from pipe_client import ArcGisPipeClient
+from arcgis_mcp.pipe_client import ArcGisPipeClient
 
 
 def test_connection():

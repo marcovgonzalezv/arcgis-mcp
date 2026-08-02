@@ -14,7 +14,7 @@ PYTHON_SERVER = PROJECT_ROOT / "python-server"
 sys.path.insert(0, str(PYTHON_SERVER))
 
 test_connection = importlib.import_module("test_connection")
-safety = importlib.import_module("tools.safety")
+safety = importlib.import_module("arcgis_mcp.tools.safety")
 
 
 class FailingClient:
@@ -31,7 +31,7 @@ class AccessDeniedClient:
 
 class OperationalContractsTest(unittest.TestCase):
     def test_mcp_tool_registry_matches_public_contract(self):
-        server = PYTHON_SERVER / "arcgis_mcp_server.py"
+        server = PYTHON_SERVER / "arcgis_mcp" / "server.py"
         tree = ast.parse(server.read_text(encoding="utf-8"))
 
         tools = []
@@ -165,10 +165,10 @@ class OperationalContractsTest(unittest.TestCase):
             ]
         )
 
-        self.assertNotIn("62 herramientas", docs)
-        self.assertNotIn("51 comandos", docs)
-        self.assertIn("65 herramientas MCP", docs)
-        self.assertIn("54 comandos", docs)
+        self.assertNotIn("62 tools", docs)
+        self.assertNotIn("51 commands", docs)
+        self.assertIn("65 MCP tools", docs)
+        self.assertIn("54 Add-In commands", docs)
 
     def test_destructive_geoprocessing_requires_explicit_opt_in(self):
         with self.assertRaises(safety.DestructiveOperationBlocked):
@@ -210,14 +210,19 @@ class OperationalContractsTest(unittest.TestCase):
 
     def test_python_modules_do_not_keep_unused_imports(self):
         allowed_reexport_modules = {
-            PYTHON_SERVER / "tools" / "__init__.py",
-            PYTHON_SERVER / "prompts" / "__init__.py",
-            PYTHON_SERVER / "resources" / "__init__.py",
+            PYTHON_SERVER / "arcgis_mcp" / "tools" / "__init__.py",
+            PYTHON_SERVER / "arcgis_mcp" / "prompts" / "__init__.py",
+            PYTHON_SERVER / "arcgis_mcp" / "resources" / "__init__.py",
         }
         offenders = []
 
         for path in PYTHON_SERVER.rglob("*.py"):
             if path in allowed_reexport_modules:
+                continue
+            if any(
+                part in {"build", "dist", "__pycache__"} or part.endswith(".egg-info")
+                for part in path.parts
+            ):
                 continue
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
             imports = {}
@@ -269,7 +274,9 @@ class OperationalContractsTest(unittest.TestCase):
         self.assertIn("same permission level", output)
 
     def test_python_client_keeps_named_pipe_in_byte_mode(self):
-        source = (PYTHON_SERVER / "pipe_client.py").read_text(encoding="utf-8")
+        source = (PYTHON_SERVER / "arcgis_mcp" / "pipe_client.py").read_text(
+            encoding="utf-8"
+        )
 
         self.assertNotIn("PIPE_READMODE_MESSAGE", source)
 
@@ -291,7 +298,9 @@ class OperationalContractsTest(unittest.TestCase):
         self.assertEqual([], offenders)
 
     def test_python_client_does_not_silence_cleanup_errors(self):
-        source = (PYTHON_SERVER / "pipe_client.py").read_text(encoding="utf-8")
+        source = (PYTHON_SERVER / "arcgis_mcp" / "pipe_client.py").read_text(
+            encoding="utf-8"
+        )
 
         self.assertNotRegex(source, r"except\s*:")
         self.assertNotRegex(source, r"except\s+Exception\s*:\s*pass")

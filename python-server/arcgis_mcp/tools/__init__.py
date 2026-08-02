@@ -1,12 +1,12 @@
-from tools.core_tools import health_check, get_capabilities
-from tools.project_tools import (
+from .core_tools import health_check, get_capabilities
+from .project_tools import (
     list_maps,
     open_map,
     save_project_as,
     list_project_items,
     list_bookmarks,
 )
-from tools.map_tools import (
+from .map_tools import (
     get_active_map,
     list_layers,
     zoom_to_layer,
@@ -18,20 +18,20 @@ from tools.map_tools import (
     clear_selection,
     save_project,
 )
-from tools.data_tools import (
+from .data_tools import (
     count_features,
     select_features,
     get_selected_features,
     get_layer_fields,
     query_layer,
 )
-from tools.geoprocessing_tools import (
+from .geoprocessing_tools import (
     run_gp_tool,
     buffer_analysis,
     clip_analysis,
     spatial_join,
 )
-from tools.layout_tools import (
+from .layout_tools import (
     list_layouts,
     export_layout,
     export_all_layouts,
@@ -42,7 +42,7 @@ from tools.layout_tools import (
     add_dynamic_text,
     update_layout_element,
 )
-from tools.symbology_tools import (
+from .symbology_tools import (
     apply_graduated_symbology,
     apply_unique_value_symbology,
     apply_symbology_from_layer,
@@ -51,25 +51,25 @@ from tools.symbology_tools import (
     update_class_breaks,
     apply_raster_colorizer,
 )
-from tools.layer_io_tools import (
+from .layer_io_tools import (
     save_layer_file,
     load_layer_file,
     export_layer,
     remove_layer,
 )
-from tools.editing_tools import (
+from .editing_tools import (
     update_attributes,
     create_feature,
     delete_selected_features,
     undo_last_edit,
 )
-from tools.geodatabase_tools import (
+from .geodatabase_tools import (
     list_feature_classes,
     list_domains,
     create_domain,
     describe_dataset,
 )
-from tools.portal_tools import (
+from .portal_tools import (
     connect_portal,
     get_active_portal,
     search_portal_items,
@@ -77,13 +77,13 @@ from tools.portal_tools import (
     publish_web_layer,
     stage_service_definition,
 )
-from tools.feature_service_tools import (
+from .feature_service_tools import (
     query_feature_service,
     get_service_layers,
     get_layer_schema,
     export_service_geojson,
 )
-from tools.docs_tools import search_arcgis_docs
+from .docs_tools import search_arcgis_docs
 
 __all__ = [
     "health_check",

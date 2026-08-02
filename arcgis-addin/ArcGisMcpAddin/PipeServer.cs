@@ -110,6 +110,10 @@ namespace ArcGisMcpAddin
 
             if (requestLength <= 0 || requestLength > MaxRequestBytes)
             {
+                string errorMessage = requestLength <= 0
+                    ? "Invalid request length received from client."
+                    : $"Request of {requestLength} bytes exceeds the maximum allowed size of {MaxRequestBytes} bytes.";
+                await WriteResponseAsync(pipeStream, CommandHandler.SerializeError(errorMessage, "INVALID_REQUEST"), token);
                 return;
             }
 
@@ -117,11 +121,16 @@ namespace ArcGisMcpAddin
             string requestJson = Encoding.UTF8.GetString(requestBytes);
             string responseJson = await CommandHandler.HandleAsync(requestJson);
 
+            await WriteResponseAsync(pipeStream, responseJson, token);
+        }
+
+        private static async Task WriteResponseAsync(NamedPipeServerStream pipeStream, string responseJson, CancellationToken token)
+        {
             byte[] responseBytes = Encoding.UTF8.GetBytes(responseJson);
             byte[] responseLength = BitConverter.GetBytes(responseBytes.Length);
 
-            await pipeStream.WriteAsync(responseLength.AsMemory(0, responseLength.Length), token);
-            await pipeStream.WriteAsync(responseBytes.AsMemory(0, responseBytes.Length), token);
+            await pipeStream.WriteAsync(responseLength, token);
+            await pipeStream.WriteAsync(responseBytes, token);
             await pipeStream.FlushAsync(token);
             pipeStream.WaitForPipeDrain();
         }

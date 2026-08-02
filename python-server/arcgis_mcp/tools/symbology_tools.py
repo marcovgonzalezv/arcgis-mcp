@@ -1,4 +1,4 @@
-from pipe_client import ArcGisPipeClient
+from ..pipe_client import ArcGisPipeClient
 from mcp.server.fastmcp import Context
 
 client = ArcGisPipeClient()
@@ -137,22 +137,6 @@ def update_class_breaks(
     return apply_graduated_symbology(
         layer_name, field_name, break_count, classification_method, color_ramp, ctx
     )
-
-
-def save_layer_file(layer_name: str, output_path: str, ctx: Context = None) -> str:
-    """
-    Saves a layer to a .lyrx file.
-    """
-    if ctx:
-        ctx.info(f"Saving layer '{layer_name}' to '{output_path}'...")
-    resp = client.send_command(
-        "save_layer_file",
-        {"layer_name": layer_name, "output_path": output_path},
-        timeout_ms=30000,
-    )
-    if resp.get("success"):
-        return f"Layer file saved to '{output_path}'."
-    return f"Error saving layer file: {resp.get('message') or resp.get('error')}"
 
 
 def apply_raster_colorizer(

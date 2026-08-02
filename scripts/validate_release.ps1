@@ -36,12 +36,16 @@ function Remove-GeneratedArtifacts {
         "arcgis-addin\ArcGisMcpAddin\bin",
         "arcgis-addin\ArcGisMcpAddin\obj",
         "python-server\__pycache__",
-        "python-server\tools\__pycache__",
-        "python-server\resources\__pycache__",
-        "python-server\prompts\__pycache__",
+        "python-server\arcgis_mcp\__pycache__",
+        "python-server\arcgis_mcp\tools\__pycache__",
+        "python-server\arcgis_mcp\resources\__pycache__",
+        "python-server\arcgis_mcp\prompts\__pycache__",
         "python-server\tests\__pycache__",
         "python-server\.pytest_cache",
         "python-server\.ruff_cache",
+        "python-server\dist",
+        "python-server\build",
+        "python-server\arcgis_mcp_server.egg-info",
         ".pytest_cache"
     )
 

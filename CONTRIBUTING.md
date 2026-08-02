@@ -40,8 +40,8 @@ python test_connection.py
 
 ## Tool contract
 
-- Add new MCP tools in `python-server/arcgis_mcp_server.py`.
-- Place tool implementation in the matching `python-server/tools/` module.
+- Add new MCP tools in `python-server/arcgis_mcp/server.py`.
+- Place tool implementation in the matching `python-server/arcgis_mcp/tools/` module.
 - Add Add-In commands to `CommandNames.All` only when C# handles the command.
 - Add Python-only wrappers to `ToolNames.All` when they call existing Add-In commands.
 - Keep `ping` as an internal Add-In command, not a public MCP tool.

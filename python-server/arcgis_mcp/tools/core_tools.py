@@ -1,4 +1,4 @@
-from pipe_client import ArcGisPipeClient
+from ..pipe_client import ArcGisPipeClient
 from mcp.server.fastmcp import Context
 
 client = ArcGisPipeClient()

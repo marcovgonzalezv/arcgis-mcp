@@ -1,91 +1,100 @@
-# Guia de instalacion y configuracion
+# Installation and configuration guide
 
-Esta guia describe como compilar, instalar, configurar y probar `arcgis-mcp` con ArcGIS Pro 3.7.
+This guide describes how to compile, install, configure, and test `arcgis-mcp` with ArcGIS Pro 3.7.
 
-## Requisitos
+## Requirements
 
-1. ArcGIS Pro 3.7 instalado y con licencia activa.
+1. ArcGIS Pro 3.7 installed with an active license.
 2. .NET 10 SDK.
-3. Python 3.10 o superior.
-4. Paquetes de `python-server/requirements.txt`.
+3. Python 3.10 or higher.
+4. Packages from `python-server/requirements.txt`.
 
-## Compilar e instalar el Add-In
+## Compile and install the Add-In
 
-Ejecuta PowerShell en la raiz del proyecto:
+Run PowerShell at the project root:
 
 ```powershell
 cd C:\path\to\arcgis-mcp
 .\install_addin.ps1
 ```
 
-El instalador:
+The installer:
 
-- Compila `arcgis-addin/ArcGisMcpAddin.sln`.
-- Genera `ArcGisMcpAddin.esriAddinX`.
-- Copia el paquete en la carpeta de Add-Ins de ArcGIS Pro.
+- Compiles `arcgis-addin/ArcGisMcpAddin.sln`.
+- Generates `ArcGisMcpAddin.esriAddinX`.
+- Copies the package to the ArcGIS Pro Add-Ins folder.
 
-Despues de instalar, cierra y vuelve a abrir ArcGIS Pro para cargar la version actual del Add-In.
+After installation, close and reopen ArcGIS Pro to load the current Add-In version.
 
-## Instalar dependencias Python
+## Install Python dependencies
 
 ```powershell
 cd C:\path\to\arcgis-mcp\python-server
-pip install -r requirements.txt
-```
-
-Puedes usar el Python de ArcGIS Pro o un entorno virtual propio con `mcp` y `pywin32`.
-
-Para ejecutar pruebas y controles de estilo:
-
-```powershell
 pip install -r requirements-dev.txt
+pip install -e .
 ```
 
-## Verificar el Add-In
+You may use the ArcGIS Pro Python distribution or a dedicated virtual environment with `mcp` and `pywin32`.
 
-1. Abre ArcGIS Pro 3.7.
-2. Abre o crea un proyecto con al menos un mapa.
-3. Ve a `Settings > Add-In Manager`.
-4. Verifica que aparezca `ArcGIS Pro MCP Server Bridge`.
-5. Abre una vista de mapa.
-6. En la cinta superior debe aparecer la pestana `ArcGIS MCP`.
-7. Usa `Show MCP Status` para confirmar que el Named Pipe `\\.\pipe\ArcGisMcpBridge` esta activo.
+The editable install (`pip install -e .`) registers the `arcgis-mcp-server` console script, so the server can be launched with `python -m arcgis_mcp` or directly as `arcgis-mcp-server`.
 
-## Probar la conexion
+## Verify the Add-In
 
-Con ArcGIS Pro abierto:
+1. Open ArcGIS Pro 3.7.
+2. Open or create a project with at least one map.
+3. Go to `Settings > Add-In Manager`.
+4. Verify that `ArcGIS Pro MCP Server Bridge` is listed.
+5. Open a map view.
+6. The `ArcGIS MCP` tab must appear on the ribbon.
+7. Use `Show MCP Status` to confirm that the Named Pipe `\\.\pipe\ArcGisMcpBridge` is active.
+
+## Test the connection
+
+With ArcGIS Pro open:
 
 ```powershell
 cd C:\path\to\arcgis-mcp\python-server
 python test_connection.py
 ```
 
-Salida esperada:
+Expected output:
 
 ```text
 SUCCESS: Connected to ArcGIS Pro MCP Bridge.
 ```
 
-## Registrar el servidor MCP
+## Register the MCP server
 
-Agrega el servidor en la configuracion de tu cliente MCP:
+Add the server to your MCP client configuration.
+
+Installed entry point (after `pip install -e .` or `pip install arcgis-mcp-server`):
+
+```json
+{
+  "mcpServers": {
+    "arcgis-mcp": {
+      "command": "C:/path/to/Scripts/arcgis-mcp-server.exe"
+    }
+  }
+}
+```
+
+From source:
 
 ```json
 {
   "mcpServers": {
     "arcgis-mcp": {
       "command": "python.exe",
-      "args": [
-        "C:/path/to/arcgis-mcp/python-server/arcgis_mcp_server.py"
-      ]
+      "args": ["-m", "arcgis_mcp"]
     }
   }
 }
 ```
 
-Si `python.exe` no esta en `PATH`, usa la ruta absoluta del ejecutable.
+If `python.exe` is not on `PATH`, use the absolute path of the executable.
 
-## Pruebas locales
+## Local tests
 
 ```powershell
 cd C:\path\to\arcgis-mcp\python-server

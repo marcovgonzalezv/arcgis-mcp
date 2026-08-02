@@ -5,6 +5,12 @@ __pycache__/
 .venv/
 venv/
 
+# Python packaging artifacts
+dist/
+build/
+*.egg-info/
+*.whl
+
 # .NET / ArcGIS Pro Add-in build output
 bin/
 obj/

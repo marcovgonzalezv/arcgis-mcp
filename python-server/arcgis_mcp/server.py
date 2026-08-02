@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP, Context
-import tools
-import resources
-import prompts
+from . import tools
+from . import resources
+from . import prompts
 
 # Initialize FastMCP Server
 mcp = FastMCP("arcgis-mcp")
@@ -877,5 +877,9 @@ def generate_addin_button(button_action: str) -> str:
 # =====================================================================
 # RUN SERVER
 # =====================================================================
-if __name__ == "__main__":
+def main():
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

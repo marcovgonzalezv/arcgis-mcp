@@ -1,0 +1,234 @@
+name: Release
+
+# Triggered when a version tag (v*) is pushed, or manually from the Actions tab.
+# All jobs run on the self-hosted Windows runner that has ArcGIS Pro 3.7 and the
+# .NET SDK installed, so every artifact (wheel + .esriAddinX) is built by CI.
+#
+# Runner label required: self-hosted, windows, arcgis-pro
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ------------------------------------------------------------------
+  # Gate: lint + tests before releasing.
+  # ------------------------------------------------------------------
+  validate:
+    name: Validate (lint + tests)
+    runs-on: [self-hosted, windows, arcgis-pro]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: python-server
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Ruff check
+        working-directory: python-server
+        run: python -m ruff check . --no-cache
+
+      - name: Ruff format check
+        working-directory: python-server
+        run: python -m ruff format . --check --no-cache
+
+      - name: Pytest suite
+        working-directory: python-server
+        run: python -m pytest -q
+
+      - name: Unittest suite
+        working-directory: python-server
+        run: python -m unittest discover -s tests -v
+
+      - name: Git whitespace check
+        run: git diff --check
+
+  # ------------------------------------------------------------------
+  # Build the Python distributions (pure-Python wheel + sdist).
+  # ------------------------------------------------------------------
+  build:
+    name: Build Python distributions
+    needs: validate
+    runs-on: [self-hosted, windows, arcgis-pro]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install build tool
+        run: python -m pip install build
+
+      - name: Verify tag matches project version
+        working-directory: python-server
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#v}"
+          PROJ=$(python -c "import tomllib; print(tomllib.loads(open('pyproject.toml','rb').read().decode())['project']['version'])")
+          echo "Git tag version : $TAG"
+          echo "pyproject version: $PROJ"
+          if [ "$TAG" != "$PROJ" ]; then
+            echo "::error::Version mismatch: tag '$TAG' != pyproject '$PROJ'. Bump pyproject.toml, arcgis_mcp/__init__.py, Config.daml and CoreCommands.cs before tagging."
+            exit 1
+          fi
+
+      - name: Build wheel and sdist
+        working-directory: python-server
+        run: python -m build --outdir dist
+
+      - name: Generate SHA256 checksums
+        working-directory: python-server/dist
+        run: sha256sum * > checksums.txt
+
+      - name: Show artifacts
+        working-directory: python-server/dist
+        run: ls -la
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: python-server/dist/*
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------
+  # Build the ArcGIS Pro Add-In (.esriAddinX) using the ArcGIS Pro SDK
+  # available on the self-hosted runner.
+  # ------------------------------------------------------------------
+  build-addin:
+    name: Build ArcGIS Pro Add-In
+    needs: validate
+    runs-on: [self-hosted, windows, arcgis-pro]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build Add-In
+        working-directory: arcgis-addin
+        run: dotnet build ArcGisMcpAddin.sln --configuration Release --nologo
+
+      - name: Verify package exists
+        shell: pwsh
+        run: |
+          $p = "arcgis-addin\ArcGisMcpAddin\bin\Release\win-x64\ArcGisMcpAddin.esriAddinX"
+          if (-not (Test-Path $p)) { throw "esriAddinX not found at $p" }
+          Write-Output "Found: $p"
+
+      - name: Upload Add-In artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-addin
+          path: arcgis-addin/ArcGisMcpAddin/bin/Release/win-x64/ArcGisMcpAddin.esriAddinX
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------
+  # Create a DRAFT GitHub Release with ALL artifacts attached.
+  # The maintainer reviews and clicks Publish.
+  # ------------------------------------------------------------------
+  github-release:
+    name: Create draft GitHub Release
+    needs: [build, build-addin]
+    runs-on: [self-hosted, windows, arcgis-pro]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download Python distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Download ArcGIS Pro Add-In
+        uses: actions/download-artifact@v4
+        with:
+          name: release-addin
+          path: dist
+
+      - name: Regenerate checksums (all assets)
+        working-directory: dist
+        run: |
+          rm -f checksums.txt
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Compute stripped version
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## arcgis-mcp ${{ github.ref_name }}
+
+            ### Assets (all built by CI)
+            - `ArcGisMcpAddin.esriAddinX` — ArcGIS Pro Add-In (built on the self-hosted runner with ArcGIS Pro 3.7). Double-click or use Add-In Manager to install.
+            - `arcgis_mcp_server-${{ steps.ver.outputs.version }}-py3-none-any.whl` — Python MCP server (`pip install <file>.whl` or via `setup.ps1`).
+            - `arcgis_mcp_server-${{ steps.ver.outputs.version }}.tar.gz` — source distribution.
+            - `checksums.txt` — SHA256 of every asset.
+
+            ### End-user install
+            Download the `.esriAddinX`, the `.whl`, and `setup.ps1` from this release,
+            place them in the same folder, and run `.\setup.ps1`.
+          files: |
+            dist/ArcGisMcpAddin.esriAddinX
+            dist/*.whl
+            dist/*.tar.gz
+            dist/checksums.txt
+
+  # ------------------------------------------------------------------
+  # Optional: publish to PyPI with twine (API token).
+  # Enable by setting the repository variable PUBLISH_TO_PYPI=true and
+  # the secret PYPI_API_TOKEN with an upload token from pypi.org.
+  # ------------------------------------------------------------------
+  publish-pypi:
+    name: Publish to PyPI (optional)
+    needs: build
+    runs-on: [self-hosted, windows, arcgis-pro]
+    if: ${{ vars.PUBLISH_TO_PYPI == 'true' }}
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m pip install --upgrade twine
+          twine upload dist/*.whl dist/*.tar.gz

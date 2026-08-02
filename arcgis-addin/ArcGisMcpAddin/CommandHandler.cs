@@ -510,7 +510,7 @@ namespace ArcGisMcpAddin
             return result;
         }
 
-        private static string SerializeError(string message, string errorCode = "INVALID_REQUEST", long elapsedMs = 0)
+        internal static string SerializeError(string message, string errorCode = "INVALID_REQUEST", long elapsedMs = 0)
         {
             return JsonSerializer.Serialize(new
             {
