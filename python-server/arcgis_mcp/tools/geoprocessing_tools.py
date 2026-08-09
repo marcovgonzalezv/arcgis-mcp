@@ -1,5 +1,6 @@
-from ..pipe_client import ArcGisPipeClient
 from mcp.server.fastmcp import Context
+
+from ..pipe_client import ArcGisPipeClient
 from .safety import DestructiveOperationBlocked, guard_destructive_tool
 
 client = ArcGisPipeClient()

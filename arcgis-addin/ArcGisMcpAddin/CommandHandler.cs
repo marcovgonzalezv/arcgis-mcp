@@ -43,6 +43,10 @@ namespace ArcGisMcpAddin
                         resultData = await CoreCommands.GetCapabilitiesAsync();
                         break;
 
+                    case "check_license":
+                        resultData = await LicenseCommands.CheckLicenseAsync();
+                        break;
+
                     case "list_maps":
                         resultData = await ProjectCommands.ListMapsAsync();
                         break;
@@ -376,6 +380,131 @@ namespace ArcGisMcpAddin
                         resultData = await EditingCommands.UndoLastEditAsync();
                         break;
 
+                    // Direct GeometryEngine commands
+                    case "measure_distance":
+                        {
+                            string? mdA = paramsEl.TryGetProperty("layer_a", out var mdAProp) ? mdAProp.GetString() : null;
+                            string? mdB = paramsEl.TryGetProperty("layer_b", out var mdBProp) ? mdBProp.GetString() : null;
+                            if (string.IsNullOrEmpty(mdA)) throw new ArgumentException("Parameter 'layer_a' is required.");
+                            if (string.IsNullOrEmpty(mdB)) throw new ArgumentException("Parameter 'layer_b' is required.");
+                            resultData = await GeometryCommands.MeasureDistanceAsync(mdA, mdB);
+                            break;
+                        }
+
+                    case "geometry_contains":
+                        {
+                            string? gcA = paramsEl.TryGetProperty("layer_a", out var gcAProp) ? gcAProp.GetString() : null;
+                            string? gcB = paramsEl.TryGetProperty("layer_b", out var gcBProp) ? gcBProp.GetString() : null;
+                            if (string.IsNullOrEmpty(gcA)) throw new ArgumentException("Parameter 'layer_a' is required.");
+                            if (string.IsNullOrEmpty(gcB)) throw new ArgumentException("Parameter 'layer_b' is required.");
+                            resultData = await GeometryCommands.ContainsAsync(gcA, gcB);
+                            break;
+                        }
+
+                    case "geometry_intersects":
+                        {
+                            string? giA = paramsEl.TryGetProperty("layer_a", out var giAProp) ? giAProp.GetString() : null;
+                            string? giB = paramsEl.TryGetProperty("layer_b", out var giBProp) ? giBProp.GetString() : null;
+                            if (string.IsNullOrEmpty(giA)) throw new ArgumentException("Parameter 'layer_a' is required.");
+                            if (string.IsNullOrEmpty(giB)) throw new ArgumentException("Parameter 'layer_b' is required.");
+                            resultData = await GeometryCommands.IntersectsAsync(giA, giB);
+                            break;
+                        }
+
+                    case "geometry_within_distance":
+                        {
+                            string? wdA = paramsEl.TryGetProperty("layer_a", out var wdAProp) ? wdAProp.GetString() : null;
+                            string? wdB = paramsEl.TryGetProperty("layer_b", out var wdBProp) ? wdBProp.GetString() : null;
+                            if (string.IsNullOrEmpty(wdA)) throw new ArgumentException("Parameter 'layer_a' is required.");
+                            if (string.IsNullOrEmpty(wdB)) throw new ArgumentException("Parameter 'layer_b' is required.");
+                            double wdDistance = paramsEl.GetProperty("distance").GetDouble();
+                            resultData = await GeometryCommands.WithinDistanceAsync(wdA, wdB, wdDistance);
+                            break;
+                        }
+
+                    case "geometry_area":
+                        {
+                            string? gaLayer = paramsEl.TryGetProperty("layer_name", out var gaProp) ? gaProp.GetString() : null;
+                            if (string.IsNullOrEmpty(gaLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                            resultData = await GeometryCommands.AreaAsync(gaLayer);
+                            break;
+                        }
+
+                    case "geometry_length":
+                        {
+                            string? gLenLayer = paramsEl.TryGetProperty("layer_name", out var gLenProp) ? gLenProp.GetString() : null;
+                            if (string.IsNullOrEmpty(gLenLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                            resultData = await GeometryCommands.LengthAsync(gLenLayer);
+                            break;
+                        }
+
+                    case "set_camera_3d":
+                        {
+                            double heading = paramsEl.GetProperty("heading").GetDouble();
+                            double pitch = paramsEl.GetProperty("pitch").GetDouble();
+                            double? scRoll = paramsEl.TryGetProperty("roll", out var scRollProp) ? scRollProp.GetDouble() : null;
+                            double? scScale = paramsEl.TryGetProperty("scale", out var scScaleProp) ? scScaleProp.GetDouble() : null;
+                            resultData = await GeometryCommands.SetCamera3DAsync(heading, pitch, scRoll, scScale);
+                            break;
+                        }
+
+                    // Bulk data access (arcpy.da-style) commands
+                    case "insert_features":
+                        {
+                            string? insertLayer = paramsEl.TryGetProperty("layer_name", out var ifLayerProp) ? ifLayerProp.GetString() : null;
+                            if (string.IsNullOrEmpty(insertLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                            var insertFeatures = DeserializeFeatureList(paramsEl.GetProperty("features"));
+                            resultData = await DataAccessCommands.InsertFeaturesAsync(insertLayer, insertFeatures);
+                            break;
+                        }
+
+                    case "update_features":
+                        {
+                            string? updFeaturesLayer = paramsEl.TryGetProperty("layer_name", out var ufLayerProp) ? ufLayerProp.GetString() : null;
+                            if (string.IsNullOrEmpty(updFeaturesLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                            var updateItems = DeserializeFeatureList(paramsEl.GetProperty("updates"));
+                            resultData = await DataAccessCommands.UpdateFeaturesAsync(updFeaturesLayer, updateItems);
+                            break;
+                        }
+
+                    case "delete_features":
+                        {
+                            string? delLayer = paramsEl.TryGetProperty("layer_name", out var dfLayerProp) ? dfLayerProp.GetString() : null;
+                            if (string.IsNullOrEmpty(delLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
+                            var oids = new System.Collections.Generic.List<long>();
+                            foreach (var item in paramsEl.GetProperty("object_ids").EnumerateArray())
+                            {
+                                oids.Add(item.GetInt64());
+                            }
+                            resultData = await DataAccessCommands.DeleteFeaturesAsync(delLayer, oids);
+                            break;
+                        }
+
+                    // Bookmark commands (list_bookmarks already handled above)
+                    case "create_bookmark":
+                        {
+                            string? cbName = paramsEl.TryGetProperty("name", out var cbnProp) ? cbnProp.GetString() : null;
+                            if (string.IsNullOrEmpty(cbName)) throw new ArgumentException("Parameter 'name' is required.");
+                            resultData = await BookmarkCommands.CreateBookmarkAsync(cbName);
+                            break;
+                        }
+
+                    case "zoom_to_bookmark":
+                        {
+                            string? zbName = paramsEl.TryGetProperty("name", out var zbnProp) ? zbnProp.GetString() : null;
+                            if (string.IsNullOrEmpty(zbName)) throw new ArgumentException("Parameter 'name' is required.");
+                            resultData = await BookmarkCommands.ZoomToBookmarkAsync(zbName);
+                            break;
+                        }
+
+                    case "delete_bookmark":
+                        {
+                            string? dbName = paramsEl.TryGetProperty("name", out var dbnProp) ? dbnProp.GetString() : null;
+                            if (string.IsNullOrEmpty(dbName)) throw new ArgumentException("Parameter 'name' is required.");
+                            resultData = await BookmarkCommands.DeleteBookmarkAsync(dbName);
+                            break;
+                        }
+
                     // Portal Commands
                     case "get_active_portal":
                         resultData = await PortalCommands.GetActivePortalAsync();
@@ -549,6 +678,55 @@ namespace ArcGisMcpAddin
             }
 
             return result;
+        }
+
+        private static System.Collections.Generic.List<Dictionary<string, object?>> DeserializeFeatureList(JsonElement array)
+        {
+            var list = new System.Collections.Generic.List<Dictionary<string, object?>>();
+            if (array.ValueKind != JsonValueKind.Array)
+            {
+                return list;
+            }
+
+            foreach (var item in array.EnumerateArray())
+            {
+                var dict = new Dictionary<string, object?>();
+                if (item.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var property in item.EnumerateObject())
+                    {
+                        if (property.Name == "attributes" && property.Value.ValueKind == JsonValueKind.Object)
+                        {
+                            var nested = new Dictionary<string, object?>();
+                            foreach (var nestedProp in property.Value.EnumerateObject())
+                            {
+                                nested[nestedProp.Name] = JsonElementToObject(nestedProp.Value);
+                            }
+                            dict["attributes"] = nested;
+                        }
+                        else
+                        {
+                            dict[property.Name] = JsonElementToObject(property.Value);
+                        }
+                    }
+                }
+                list.Add(dict);
+            }
+            return list;
+        }
+
+        private static object? JsonElementToObject(JsonElement element)
+        {
+            return element.ValueKind switch
+            {
+                JsonValueKind.String => element.GetString(),
+                JsonValueKind.Number when element.TryGetInt64(out var integer) => integer,
+                JsonValueKind.Number when element.TryGetDouble(out var number) => number,
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => element.ToString()
+            };
         }
 
         internal static string SerializeError(string message, string errorCode = "INVALID_REQUEST", long elapsedMs = 0)

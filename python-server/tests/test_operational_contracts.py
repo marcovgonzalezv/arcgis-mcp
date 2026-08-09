@@ -1,6 +1,6 @@
-import io
 import ast
 import importlib
+import io
 import pathlib
 import re
 import sys
@@ -48,12 +48,18 @@ class OperationalContractsTest(unittest.TestCase):
             if any(item.startswith("mcp.prompt") for item in decorators):
                 prompts.append(node.name)
 
-        self.assertEqual(68, len(tools))
+        self.assertEqual(167, len(tools))
         self.assertEqual(2, len(resources))
         self.assertEqual(2, len(prompts))
         self.assertIn("spatial_join", tools)
         self.assertIn("query_layer", tools)
         self.assertIn("export_all_layouts", tools)
+        self.assertIn("check_license", tools)
+        self.assertIn("insert_features", tools)
+        self.assertIn("slope", tools)
+        self.assertIn("find_routes", tools)
+        self.assertIn("package_project", tools)
+        self.assertIn("geocode_addresses", tools)
 
     def test_addin_command_registry_matches_handler_cases(self):
         core = (
@@ -70,22 +76,22 @@ class OperationalContractsTest(unittest.TestCase):
         command_block = re.search(
             r"CommandNames\s*\{.*?new List<string>\s*\{(?P<body>.*?)\};",
             core,
-            re.S,
+            re.DOTALL,
         )
         tool_block = re.search(
             r"ToolNames\s*\{.*?Concat\(new\[\]\s*\{(?P<body>.*?)\}\)",
             core,
-            re.S,
+            re.DOTALL,
         )
         self.assertIsNotNone(command_block)
         self.assertIsNotNone(tool_block)
 
-        addin_commands = set(re.findall(r'"([a-z_]+)"', command_block.group("body")))
-        python_wrappers = set(re.findall(r'"([a-z_]+)"', tool_block.group("body")))
-        handler_cases = set(re.findall(r'case "([a-z_]+)":', handler))
+        addin_commands = set(re.findall(r'"([a-z0-9_]+)"', command_block.group("body")))
+        python_wrappers = set(re.findall(r'"([a-z0-9_]+)"', tool_block.group("body")))
+        handler_cases = set(re.findall(r'case "([a-z0-9_]+)":', handler))
         public_tools = (addin_commands - {"ping"}) | python_wrappers
 
-        self.assertEqual(57, len(addin_commands))
+        self.assertEqual(71, len(addin_commands))
         self.assertEqual(addin_commands, handler_cases)
         self.assertIn("ping", addin_commands)
         self.assertIn("spatial_join", python_wrappers)
@@ -93,7 +99,10 @@ class OperationalContractsTest(unittest.TestCase):
         self.assertIn("stage_service_definition", addin_commands)
         self.assertIn("query_layer", addin_commands)
         self.assertIn("export_all_layouts", addin_commands)
-        self.assertEqual(68, len(public_tools))
+        self.assertIn("check_license", addin_commands)
+        self.assertIn("insert_features", addin_commands)
+        self.assertIn("set_camera_3d", addin_commands)
+        self.assertEqual(167, len(public_tools))
 
     def test_public_files_do_not_contain_local_paths_or_ai_branding(self):
         blocked_terms = [
@@ -167,8 +176,8 @@ class OperationalContractsTest(unittest.TestCase):
 
         self.assertNotIn("66 tools", docs)
         self.assertNotIn("55 commands", docs)
-        self.assertIn("68 MCP tools", docs)
-        self.assertIn("57 Add-In commands", docs)
+        self.assertIn("167 MCP tools", docs)
+        self.assertIn("71 Add-In commands", docs)
 
     def test_destructive_geoprocessing_requires_explicit_opt_in(self):
         with self.assertRaises(safety.DestructiveOperationBlocked):
@@ -251,11 +260,13 @@ class OperationalContractsTest(unittest.TestCase):
         stream = io.TextIOWrapper(buffer, encoding="cp1252", errors="strict")
 
         try:
-            with patch.object(
-                test_connection, "ArcGisPipeClient", return_value=FailingClient()
+            with (
+                patch.object(
+                    test_connection, "ArcGisPipeClient", return_value=FailingClient()
+                ),
+                redirect_stdout(stream),
             ):
-                with redirect_stdout(stream):
-                    self.assertFalse(test_connection.test_connection())
+                self.assertFalse(test_connection.test_connection())
             stream.flush()
         finally:
             stream.detach()
@@ -263,11 +274,13 @@ class OperationalContractsTest(unittest.TestCase):
     def test_access_denied_report_explains_permission_mismatch(self):
         stream = io.StringIO()
 
-        with patch.object(
-            test_connection, "ArcGisPipeClient", return_value=AccessDeniedClient()
+        with (
+            patch.object(
+                test_connection, "ArcGisPipeClient", return_value=AccessDeniedClient()
+            ),
+            redirect_stdout(stream),
         ):
-            with redirect_stdout(stream):
-                self.assertFalse(test_connection.test_connection())
+            self.assertFalse(test_connection.test_connection())
 
         output = stream.getvalue()
         self.assertIn("Access denied troubleshooting", output)

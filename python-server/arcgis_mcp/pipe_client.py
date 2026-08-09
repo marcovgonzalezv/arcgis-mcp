@@ -1,10 +1,11 @@
-import time
 import json
 import struct
+import time
 import warnings
-import win32pipe
-import win32file
+
 import pywintypes
+import win32file
+import win32pipe
 
 PIPE_NAME = r"\\.\pipe\ArcGisMcpBridge"
 DEFAULT_TIMEOUT_MS = 5000
@@ -80,7 +81,7 @@ class ArcGisPipeClient:
         return b"".join(chunks)
 
     def send_command(
-        self, command: str, params: dict = None, timeout_ms=None, retries=None
+        self, command: str, params: dict | None = None, timeout_ms=None, retries=None
     ) -> dict:
         """
         Sends a JSON-formatted command to the C# ArcGIS Pro Add-In,
@@ -99,7 +100,7 @@ class ArcGisPipeClient:
                     "elapsed_ms", int((time.perf_counter() - started) * 1000)
                 )
                 return response
-            except (TimeoutError, IOError, OSError, pywintypes.error) as exc:
+            except (TimeoutError, OSError, pywintypes.error) as exc:
                 last_error = exc
                 if attempt >= attempts:
                     break
@@ -142,7 +143,7 @@ class ArcGisPipeClient:
             return response
 
         except pywintypes.error as e:
-            raise IOError(
+            raise OSError(
                 f"Windows IPC error communicating with ArcGIS Pro: {e.strerror} (Code {e.winerror})"
             ) from e
         finally:

@@ -33,7 +33,7 @@ El sistema tiene tres partes:
 
 1. **Add-In de ArcGIS Pro (C#):** complemento que se carga dentro de ArcGIS Pro y abre un canal de comunicacion local (Named Pipe).
 2. **Servidor MCP (Python):** expone las herramientas publicas y conversa con el Add-In.
-3. **Cliente MCP:** tu programa o asistente que consume las herramientas.
+3. **Cliente MCP:** la aplicacion que consume las herramientas.
 
 ---
 

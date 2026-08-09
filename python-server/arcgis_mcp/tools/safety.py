@@ -1,6 +1,5 @@
 import os
 
-
 TRUTHY_VALUES = {"1", "true", "yes", "y", "on"}
 DESTRUCTIVE_TOOL_TOKENS = ("delete", "truncate")
 ALLOW_DELETE_ENV = "ARCGIS_MCP_ALLOW_DELETE"
