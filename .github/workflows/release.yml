@@ -192,7 +192,7 @@ jobs:
           "version=$v" | Add-Content -Path $env:GITHUB_OUTPUT -Encoding ascii
 
       - name: Create draft release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           draft: true
           name: ${{ github.ref_name }}
