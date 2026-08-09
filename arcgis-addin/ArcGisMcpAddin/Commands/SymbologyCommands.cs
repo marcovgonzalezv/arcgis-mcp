@@ -126,7 +126,9 @@ namespace ArcGisMcpAddin.Commands
             string layerName,
             string fieldName,
             bool visible,
-            string expressionEngine)
+            string expressionEngine,
+            double haloSize = 0,
+            string haloColor = "#FFFFFF")
         {
             return QueuedTask.Run<object>(() =>
             {
@@ -140,11 +142,32 @@ namespace ArcGisMcpAddin.Commands
                 var expression = BuildLabelExpression(fieldName, engine);
                 layer.SetLabelVisibility(visible);
 
+                bool haloApplied = false;
+
                 foreach (var labelClass in layer.LabelClasses)
                 {
                     labelClass.SetExpressionEngine(engine);
                     labelClass.SetExpression(expression);
                     labelClass.SetLabelVisibility(visible);
+                }
+
+                if (haloSize > 0)
+                {
+                    var cim = layer.GetDefinition() as CIMFeatureLayer;
+                    if (cim?.LabelClasses != null)
+                    {
+                        var haloCimColor = ParseHexColor(haloColor);
+                        foreach (var lc in cim.LabelClasses)
+                        {
+                            if (lc.TextSymbol?.Symbol is CIMTextSymbol textSymbol)
+                            {
+                                textSymbol.HaloSize = haloSize;
+                                textSymbol.HaloSymbol = SymbolFactory.Instance.ConstructPolygonSymbol(haloCimColor);
+                                haloApplied = true;
+                            }
+                        }
+                        layer.SetDefinition(cim);
+                    }
                 }
 
                 return new
@@ -154,7 +177,9 @@ namespace ArcGisMcpAddin.Commands
                     field_name = fieldName,
                     visible,
                     expression = expression,
-                    expression_engine = engine.ToString()
+                    expression_engine = engine.ToString(),
+                    halo_size = haloApplied ? haloSize : 0,
+                    halo_color = haloApplied ? haloColor : ""
                 };
             });
         }
@@ -319,6 +344,18 @@ namespace ArcGisMcpAddin.Commands
         {
             var messages = result.Messages?.Select(m => $"[{m.Type}] {m.Text}") ?? Enumerable.Empty<string>();
             return string.Join("\n", messages);
+        }
+
+        private static CIMColor ParseHexColor(string hex)
+        {
+            int r = 255, g = 255, b = 255;
+            if (!string.IsNullOrEmpty(hex) && hex.StartsWith("#") && hex.Length >= 7)
+            {
+                r = Convert.ToInt32(hex.Substring(1, 2), 16);
+                g = Convert.ToInt32(hex.Substring(3, 2), 16);
+                b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            }
+            return ColorFactory.Instance.CreateRGBColor(r, g, b);
         }
 
         public static Task<object> SetLayerSymbolAsync(

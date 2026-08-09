@@ -80,10 +80,13 @@ def label_layer(
     field_name: str,
     visible: bool = True,
     expression_engine: str = "Arcade",
+    halo_size: float = 0,
+    halo_color: str = "#FFFFFF",
     ctx: Context = None,
 ) -> str:
     """
     Enables labels on a feature layer using a field-based expression.
+    Optionally applies a text halo for readability over any background.
     """
     if ctx:
         ctx.info(f"Configuring labels for '{layer_name}'...")
@@ -94,11 +97,16 @@ def label_layer(
             "field_name": field_name,
             "visible": visible,
             "expression_engine": expression_engine,
+            "halo_size": halo_size,
+            "halo_color": halo_color,
         },
     )
     if resp.get("success"):
         state = "enabled" if visible else "disabled"
-        return f"Labels {state} for '{layer_name}' using '{field_name}'."
+        halo_info = ""
+        if resp.get("data", {}).get("halo_size", 0) > 0:
+            halo_info = f" with halo {resp['data']['halo_color']} ({resp['data']['halo_size']}pt)"
+        return f"Labels {state} for '{layer_name}' using '{field_name}'{halo_info}."
     return f"Error configuring labels: {resp.get('error')}"
 
 

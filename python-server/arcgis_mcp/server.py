@@ -318,12 +318,18 @@ def label_layer(
     field_name: str,
     visible: bool = True,
     expression_engine: str = "Arcade",
+    halo_size: float = 0,
+    halo_color: str = "#FFFFFF",
     ctx: Context = None,
 ) -> str:
     """
     Enables labels on a feature layer using a field-based expression.
+    Optionally applies a text halo (halo_size > 0) for readability over any background.
+    halo_color accepts hex like "#FFFFFF" (white) or "#000000" (black).
     """
-    return tools.label_layer(layer_name, field_name, visible, expression_engine, ctx)
+    return tools.label_layer(
+        layer_name, field_name, visible, expression_engine, halo_size, halo_color, ctx
+    )
 
 
 @mcp.tool()

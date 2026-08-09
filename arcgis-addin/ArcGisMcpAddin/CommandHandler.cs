@@ -247,9 +247,11 @@ namespace ArcGisMcpAddin
                         string? labelField = paramsEl.TryGetProperty("field_name", out var lfProp) ? lfProp.GetString() : null;
                         bool labelVisible = !paramsEl.TryGetProperty("visible", out var lvProp) || lvProp.GetBoolean();
                         string labelEngine = paramsEl.TryGetProperty("expression_engine", out var leProp) ? leProp.GetString() ?? "Arcade" : "Arcade";
+                        double labelHaloSize = paramsEl.TryGetProperty("halo_size", out var lhsProp) ? lhsProp.GetDouble() : 0;
+                        string labelHaloColor = paramsEl.TryGetProperty("halo_color", out var lhcProp) ? lhcProp.GetString() ?? "#FFFFFF" : "#FFFFFF";
                         if (string.IsNullOrEmpty(labelLayer)) throw new ArgumentException("Parameter 'layer_name' is required.");
                         if (string.IsNullOrEmpty(labelField)) throw new ArgumentException("Parameter 'field_name' is required.");
-                        resultData = await SymbologyCommands.LabelLayerAsync(labelLayer, labelField, labelVisible, labelEngine);
+                        resultData = await SymbologyCommands.LabelLayerAsync(labelLayer, labelField, labelVisible, labelEngine, labelHaloSize, labelHaloColor);
                         break;
 
                     case "get_layer_symbology":

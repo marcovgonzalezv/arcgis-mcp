@@ -280,15 +280,13 @@ class OperationalContractsTest(unittest.TestCase):
 
         self.assertNotIn("PIPE_READMODE_MESSAGE", source)
 
-    def test_pipe_server_uses_streamjsonrpc(self):
+    def test_pipe_server_does_not_query_unsupported_length(self):
         source = (
             PROJECT_ROOT / "arcgis-addin" / "ArcGisMcpAddin" / "PipeServer.cs"
         ).read_text(encoding="utf-8")
 
         self.assertNotIn("pipeStream.Length", source)
-        self.assertIn("StreamJsonRpc", source)
-        self.assertIn("LengthHeaderMessageHandler", source)
-        self.assertIn("JsonRpc", source)
+        self.assertIn("ReadExactlyAsync", source)
 
     def test_addin_does_not_use_silent_catches(self):
         offenders = []

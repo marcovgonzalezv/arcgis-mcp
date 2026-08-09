@@ -7,22 +7,14 @@
     <UseWindowsForms>false</UseWindowsForms>
     <NoWarn>$(NoWarn);CA1416;CS0162</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!-- NU1902/NU1903: StreamJsonRpc pulls MessagePack 2.5.x (transitive) with known CVEs.
-         We never use the MessagePack formatter (only JsonMessageFormatter), so these
-         vulnerabilities are not exploitable. Kept as warnings for visibility. -->
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1902;NU1903</WarningsNotAsErrors>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AssemblyName>ArcGisMcpAddin</AssemblyName>
     <RootNamespace>ArcGisMcpAddin</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="StreamJsonRpc" Version="2.19.27" />
-  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="ArcGIS.Core">
