@@ -109,7 +109,7 @@ jobs:
         run: Get-ChildItem -File | Format-Table Name, Length -AutoSize
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-dist
           path: python-server/dist/*
@@ -141,7 +141,7 @@ jobs:
           Write-Host "Found: $p"
 
       - name: Upload Add-In artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-addin
           path: arcgis-addin/ArcGisMcpAddin/bin/Release/win-x64/ArcGisMcpAddin.esriAddinX
