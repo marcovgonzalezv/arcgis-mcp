@@ -29,7 +29,7 @@ classifiers = [
 dependencies = [
     "mcp>=1.28.1,<2",
     "pywin32>=312",
-    "pydantic>=2.13.5",
+    "pydantic>=2.14.1",
 ]
 
 [project.urls]
